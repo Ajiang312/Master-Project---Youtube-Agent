@@ -1,0 +1,5 @@
+supabase
+youtube-transcript-api
+python-dotenv
+requests
+youtube_transcript_api
