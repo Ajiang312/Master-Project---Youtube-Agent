@@ -1,11 +1,7 @@
 import os, time, traceback
 from supabase import create_client
 
-# Ta fonction existante qui:
-# - récupère transcript
-# - upload JSON dans Storage
-# - skip si déjà présent
-from transcript import transcript as run_transcript
+from transcript import transcript as run_transcript # Notre fonction qui: récupère transcript, upload JSON dans Storage, skip si déjà présent
 
 
 # ------- ENV -------
@@ -79,8 +75,6 @@ def main():
     try:
         # Transcrit + upload (dans transcript.py)
         url = run_transcript(video_id)
-
-        # Si ton transcript.py skip (déjà présent) il renvoie souvent une URL aussi.
         # Si None: pas de transcript dispo ou skip sans URL.
         if url:
             upsert_transcripts_row(video_id, storage_path, "present")
@@ -98,7 +92,6 @@ def main():
         print(f"[worker] error video={video_id}: {e}")
 
     time.sleep(SLEEP_AFTER)
-
 
 if __name__ == "__main__":
     main()
