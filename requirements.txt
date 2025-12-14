@@ -1,4 +1,0 @@
-supabase
-python-dotenv
-youtube-transcript-api
-requests
