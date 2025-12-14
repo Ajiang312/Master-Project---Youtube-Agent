@@ -2,8 +2,8 @@ name: Transcript Worker
 
 on:
   schedule:
-    - cron: "*/15 * * * *"   
-  workflow_dispatch:          
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
 
 concurrency:
   group: transcript-worker
@@ -15,30 +15,24 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
+      - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install -r backend/requirements.txt
 
-      - name: Run worker (one batch)
+      - name: Run worker once
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           YTA_PROXY: ${{ secrets.YTA_PROXY }}
-
-          # throttle safe
-          WORKER_BATCH: ${{ secrets.WORKER_BATCH }}
-          WORKER_MAX_TRIES: ${{ secrets.WORKER_MAX_TRIES }}
-          TRANSCRIPT_SLEEP: ${{ secrets.TRANSCRIPT_SLEEP }}
-          TRANSCRIPT_JITTER: ${{ secrets.TRANSCRIPT_JITTER }}
+          TRANSCRIPT_PREFIX: transcripts
+          WORKER_SLEEP_AFTER: "3"
         run: |
-          python worker_cloud.py
+          python backend/worker_cloud.py
