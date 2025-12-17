@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TubeAI - Paramètres</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="settings-style.css">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <span class="logo-text">TubeAI</span>
+        </div>
+        
+        <nav class="navigation">
+            <p class="nav-label">Navigation</p>
+            <ul class="nav-menu">
+                <li class="nav-item" onclick="window.location.href='index.html'">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li class="nav-item" onclick="window.location.href='generation-ia.html'">
+                    <i class="fas fa-magic"></i>
+                    <span>Génération IA</span>
+                </li>
+                <li class="nav-item" onclick="window.location.href='videos.html'">
+                    <i class="fas fa-video"></i>
+                    <span>Mes Vidéos</span>
+                </li>
+                <li class="nav-item" onclick="window.location.href='analytics.html'">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </li>
+                <li class="nav-item active" onclick="window.location.href='settings.html'">
+                    <i class="fas fa-cog"></i>
+                    <span>Paramètres</span>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <button class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </header>
+
+        <!-- Settings Content -->
+        <div class="settings-container">
+            <div class="settings-header">
+                <h1>Paramètres</h1>
+                <p class="subtitle">Gérez votre compte et vos préférences</p>
+            </div>
+
+            <!-- Profile Section -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <i class="fas fa-user-circle"></i>
+                    <h2>Profil</h2>
+                </div>
+                <p class="section-description">Informations de votre compte créateur</p>
+
+                <div class="settings-card">
+                    <div class="profile-photo-section">
+                        <label class="form-label">Photo de profil</label>
+                        <div class="photo-upload">
+                            <div class="photo-placeholder" id="profilePhoto">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="photo-upload-info">
+                                <button class="btn-upload">
+                                    <i class="fas fa-camera"></i>
+                                    Changer la photo
+                                </button>
+                                <p class="upload-hint">JPG, PNG ou GIF. Max 2MB</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Nom complet</label>
+                            <input type="text" class="form-input" placeholder="Jean Créateur" value="Jean Créateur">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-input" placeholder="jean@exemple.com" value="jean@exemple.com">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nom d'utilisateur</label>
+                            <input type="text" class="form-input" placeholder="@jancreateur" value="@jancreateur">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Fuseau horaire</label>
+                            <select class="form-input">
+                                <option>Europe/Paris (UTC+1)</option>
+                                <option>America/New_York (UTC-5)</option>
+                                <option>Asia/Tokyo (UTC+9)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button class="btn-primary">
+                        <i class="fas fa-save"></i>
+                        Enregistrer les modifications
+                    </button>
+                </div>
+            </div>
+
+            <!-- YouTube Connection -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <i class="fab fa-youtube"></i>
+                    <h2>Connexion YouTube</h2>
+                </div>
+                <p class="section-description">Connectez cette chaîne pour synchroniser vos données</p>
+
+                <div class="settings-card">
+                    <div class="connection-status">
+                        <div class="connection-info">
+                            <i class="fab fa-youtube connection-icon"></i>
+                            <div>
+                                <h3>Chaîne YouTube</h3>
+                                <p class="connection-subtitle" id="connectionStatus">Aucune chaîne connectée</p>
+                            </div>
+                        </div>
+                        <button class="btn-secondary" onclick="window.location.href='login.html'">
+                            Connecter
+                        </button>
+                    </div>
+
+                    <div class="connection-benefits">
+                        <p class="benefits-title">En connectant votre chaîne, vous pourrez :</p>
+                        <ul class="benefits-list">
+                            <li><i class="fas fa-check-circle"></i> Récupérer automatiquement vos statistiques</li>
+                            <li><i class="fas fa-check-circle"></i> Analyser les performances de vos vidéos</li>
+                            <li><i class="fas fa-check-circle"></i> Obtenir des suggestions personnalisées</li>
+                            <li><i class="fas fa-check-circle"></i> Publier du contenu directement</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <i class="fas fa-bell"></i>
+                    <h2>Notifications</h2>
+                </div>
+                <p class="section-description">Configurez comment vous souhaitez être notifié</p>
+
+                <div class="settings-card">
+                    <div class="toggle-item">
+                        <div class="toggle-info">
+                            <h3>Notifications par email</h3>
+                            <p>Recevez des mises à jour par email</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-item">
+                        <div class="toggle-info">
+                            <h3>Notifications push</h3>
+                            <p>Alertes en temps réel sur votre navigateur</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-item">
+                        <div class="toggle-info">
+                            <h3>Rapport hebdomadaire</h3>
+                            <p>Résumé de vos performances chaque semaine</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <div class="toggle-item">
+                        <div class="toggle-info">
+                            <h3>Suggestions de contenu</h3>
+                            <p>Recevez des idées de vidéos personnalisées</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Preferences -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <i class="fas fa-robot"></i>
+                    <h2>Préférences IA</h2>
+                </div>
+                <p class="section-description">Personnalisez le comportement de l'assistant IA</p>
+
+                <div class="settings-card">
+                    <div class="form-group">
+                        <label class="form-label">Ton des réponses</label>
+                        <select class="form-input">
+                            <option>Professionnel</option>
+                            <option>Décontracté</option>
+                            <option>Créatif</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Langue principale</label>
+                        <select class="form-input">
+                            <option>Français</option>
+                            <option>English</option>
+                            <option>Español</option>
+                        </select>
+                    </div>
+
+                    <div class="toggle-item">
+                        <div class="toggle-info">
+                            <h3>Suggestions automatiques</h3>
+                            <p>L'IA propose des idées proactivement</p>
+                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Appearance -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <i class="fas fa-palette"></i>
+                    <h2>Apparence</h2>
+                </div>
+                <p class="section-description">Personnalisez l'interface de l'application</p>
+
+                <div class="settings-card">
+                    <label class="form-label">Thème</label>
+                    <div class="theme-selector">
+                        <div class="theme-option active">
+                            <div class="theme-preview theme-light">
+                                <div class="theme-dot"></div>
+                            </div>
+                            <span>Sombre</span>
+                        </div>
+                        <div class="theme-option">
+                            <div class="theme-preview theme-dark">
+                                <div class="theme-dot"></div>
+                            </div>
+                            <span>Clair</span>
+                        </div>
+                        <div class="theme-option">
+                            <div class="theme-preview theme-auto">
+                                <div class="theme-dot"></div>
+                            </div>
+                            <span>Système</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <i class="fas fa-shield-alt"></i>
+                    <h2>Sécurité</h2>
+                </div>
+                <p class="section-description">Gérez la sécurité de votre compte</p>
+
+                <div class="settings-card">
+                    <div class="security-item">
+                        <div class="security-info">
+                            <h3>Mot de passe</h3>
+                            <p>Dernière modification il y a 3 mois</p>
+                        </div>
+                        <button class="btn-secondary-small">Modifier</button>
+                    </div>
+
+                    <div class="security-item">
+                        <div class="security-info">
+                            <h3>Authentification à deux facteurs</h3>
+                            <p>Ajoutez une couche de sécurité supplémentaire</p>
+                        </div>
+                        <button class="btn-secondary-small">Activer</button>
+                    </div>
+
+                    <div class="security-item danger-zone">
+                        <div class="security-info">
+                            <h3>Supprimer le compte</h3>
+                            <p>Cette action est irréversible</p>
+                        </div>
+                        <button class="btn-danger-small">Supprimer</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Disconnect Button -->
+            <div class="settings-section">
+                <div class="settings-card">
+                    <button class="btn-disconnect" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Se déconnecter
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script src="theme.js"></script>
+    <script src="script.js"></script>
+    <script src="settings.js"></script>
+</body>
+</html>

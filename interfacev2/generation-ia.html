@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TubeAI - Génération IA</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="generation-ia.css">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <span class="logo-text">TubeAI</span>
+        </div>
+        
+        <nav class="navigation">
+            <p class="nav-label">Navigation</p>
+            <div class="nav-item" onclick="window.location.href='index.html'">
+                <i class="fas fa-th-large"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item active">
+                <i class="fas fa-magic"></i>
+                <span>Génération IA</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='videos.html'">
+                <i class="fas fa-video"></i>
+                <span>Mes Vidéos</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='analytics.html'">
+                <i class="fas fa-chart-line"></i>
+                <span>Analytics</span>
+            </div>
+            <div class="nav-item" onclick="window.location.href='settings.html'">
+                <i class="fas fa-cog"></i>
+                <span>Paramètres</span>
+            </div>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <button class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </header>
+
+        <!-- Page Content -->
+        <div class="page-header">
+            <h1>Génération IA</h1>
+            <p class="subtitle">Créez du contenu optimisé avec l'intelligence artificielle</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs-container">
+            <div class="tabs">
+                <button class="tab active" data-tab="titres">
+                    <i class="fas fa-heading"></i>
+                    Titres
+                </button>
+                <button class="tab" data-tab="descriptions">
+                    <i class="fas fa-align-left"></i>
+                    Descriptions
+                </button>
+                <button class="tab" data-tab="scripts">
+                    <i class="fas fa-file-alt"></i>
+                    Scripts
+                </button>
+                <button class="tab" data-tab="miniatures">
+                    <i class="fas fa-image"></i>
+                    Miniatures
+                </button>
+                <button class="tab" data-tab="hashtags">
+                    <i class="fas fa-hashtag"></i>
+                    Hashtags
+                </button>
+            </div>
+        </div>
+
+        <!-- Content Layout -->
+        <div class="generation-layout">
+            <!-- Main Section -->
+            <div class="generation-main">
+                <div class="content-box">
+                    <div class="box-header">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        <h2>Décrivez votre contenu</h2>
+                    </div>
+
+                    <form id="generation-form">
+                        <div class="form-group">
+                            <label for="content-description">Description du contenu</label>
+                            <textarea 
+                                id="content-description" 
+                                placeholder="Exemple : Crée du contenu pour une vidéo review produit: Test et avis"
+                            ></textarea>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Ton</label>
+                                <div class="select-wrapper">
+                                    <select id="tone-select">
+                                        <option value="professionnel">Professionnel</option>
+                                        <option value="casual">Décontracté</option>
+                                        <option value="enthousiaste">Enthousiaste</option>
+                                        <option value="educatif">Éducatif</option>
+                                        <option value="humoristique">Humoristique</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Langue</label>
+                                <div class="select-wrapper">
+                                    <select id="language-select">
+                                        <option value="francais">Français</option>
+                                        <option value="anglais">Anglais</option>
+                                        <option value="espagnol">Espagnol</option>
+                                        <option value="allemand">Allemand</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-generate">
+                            <i class="fas fa-sparkles"></i>
+                            Générer
+                        </button>
+                    </form>
+
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <p>Génération en cours...</p>
+                    </div>
+
+                    <div class="generation-result">
+                        <h3>Résultat généré</h3>
+                        <div class="result-content"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <aside class="generation-sidebar">
+                <!-- Templates rapides -->
+                <div class="content-box">
+                    <div class="box-header">
+                        <i class="fas fa-bolt"></i>
+                        <h2>Templates rapides</h2>
+                    </div>
+                    <div class="template-list">
+                        <div class="template-card" data-template="tutoriel">
+                            <h4><i class="fas fa-graduation-cap"></i> Tutoriel</h4>
+                            <p>Guide étape par étape</p>
+                        </div>
+                        <div class="template-card" data-template="vlog">
+                            <h4><i class="fas fa-video"></i> Vlog</h4>
+                            <p>Contenu lifestyle</p>
+                        </div>
+                        <div class="template-card" data-template="review">
+                            <h4><i class="fas fa-star"></i> Review Produit</h4>
+                            <p>Test et avis</p>
+                        </div>
+                        <div class="template-card" data-template="gaming">
+                            <h4><i class="fas fa-gamepad"></i> Gaming</h4>
+                            <p>Gameplay et astuces</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Historique récent -->
+                <div class="content-box">
+                    <div class="box-header">
+                        <i class="fas fa-clock-rotate-left"></i>
+                        <h2>Historique récent</h2>
+                    </div>
+                    <div class="history-list">
+                        <div class="history-item">
+                            <div class="history-header">
+                                <span class="history-type">Titre</span>
+                                <span class="history-time">
+                                    <i class="far fa-clock"></i>
+                                    il y a 2h
+                                </span>
+                            </div>
+                            <div class="history-content">
+                                10 Astuces INCROYABLES pour...
+                            </div>
+                        </div>
+                        <div class="history-item">
+                            <div class="history-header">
+                                <span class="history-type">Description</span>
+                                <span class="history-time">
+                                    <i class="far fa-clock"></i>
+                                    il y a 5h
+                                </span>
+                            </div>
+                            <div class="history-content">
+                                Dans cette vidéo, je vous montre...
+                            </div>
+                        </div>
+                        <div class="history-item">
+                            <div class="history-header">
+                                <span class="history-type">Hashtags</span>
+                                <span class="history-time">
+                                    <i class="far fa-clock"></i>
+                                    Hier
+                                </span>
+                            </div>
+                            <div class="history-content">
+                                #youtube #tutorial #tips...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <script src="generation-ia.js"></script>
+</body>
+</html>

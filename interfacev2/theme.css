@@ -1,0 +1,247 @@
+/* theme.css - Variables de thème pour mode clair et sombre */
+/* CE FICHIER DOIT ÊTRE CHARGÉ EN DERNIER POUR OVERRIDE LES AUTRES */
+
+/* Thème SOMBRE par défaut */
+:root,
+:root[data-theme="dark"],
+body[data-theme="dark"] {
+    /* Couleurs ROUGE YouTube - NE CHANGENT JAMAIS */
+    --primary-color: #FF0000 !important;
+    --secondary-color: #CC0000 !important;
+    --success-color: #10B981 !important;
+    --danger-color: #EF4444 !important;
+    
+    /* Couleurs qui changent selon le thème */
+    --bg-color: #0F172A !important;
+    --sidebar-bg: #1E293B !important;
+    --text-dark: #F1F5F9 !important;
+    --text-light: #94A3B8 !important;
+    --border-color: #334155 !important;
+    --card-bg: #1E293B !important;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+    --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* Thème CLAIR */
+:root[data-theme="light"],
+body[data-theme="light"] {
+    /* Couleurs ROUGE YouTube - NE CHANGENT JAMAIS */
+    --primary-color: #FF0000 !important;
+    --secondary-color: #CC0000 !important;
+    --success-color: #10B981 !important;
+    --danger-color: #EF4444 !important;
+    
+    /* Couleurs qui changent selon le thème */
+    --bg-color: #F5F7FA !important;
+    --sidebar-bg: #FFFFFF !important;
+    --text-dark: #2C3E50 !important;
+    --text-light: #7F8C8D !important;
+    --border-color: #E8ECEF !important;
+    --card-bg: #FFFFFF !important;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Application du thème sur le body */
+body {
+    background-color: var(--bg-color) !important;
+    color: var(--text-dark) !important;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Transition fluide lors du changement de thème */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Empêcher la transition sur les éléments interactifs */
+button, a, input, select, textarea {
+    transition: all 0.3s ease;
+}
+
+/* Ajustements spécifiques pour le mode sombre */
+[data-theme="dark"] body {
+    background-color: var(--bg-color);
+    color: var(--text-dark);
+}
+
+[data-theme="dark"] .sidebar {
+    background: var(--sidebar-bg);
+    border-right-color: var(--border-color);
+}
+
+[data-theme="dark"] .nav-item:hover {
+    background-color: rgba(0, 188, 212, 0.15);
+}
+
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .content-box,
+[data-theme="dark"] .settings-card,
+[data-theme="dark"] .analytics-card,
+[data-theme="dark"] .chart-card {
+    background: var(--card-bg);
+    box-shadow: var(--shadow);
+}
+
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .search-box input {
+    background: var(--bg-color);
+    border-color: var(--border-color);
+    color: var(--text-dark);
+}
+
+[data-theme="dark"] .form-input:focus,
+[data-theme="dark"] .search-box input:focus {
+    background: var(--card-bg);
+    border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .assistant-message {
+    background: rgba(0, 188, 212, 0.1);
+}
+
+[data-theme="dark"] .suggestion-card,
+[data-theme="dark"] .channel-card {
+    border-color: var(--border-color);
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .suggestion-card:hover,
+[data-theme="dark"] .channel-card:hover {
+    background: rgba(0, 188, 212, 0.1);
+}
+
+[data-theme="dark"] .menu-toggle {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+/* Mode clair - ajustements spécifiques */
+[data-theme="light"] body {
+    background-color: var(--bg-color);
+    color: var(--text-dark);
+}
+
+[data-theme="light"] .logo-text,
+[data-theme="light"] .nav-item {
+    color: var(--text-dark);
+}
+
+[data-theme="light"] .nav-item.active {
+    color: var(--primary-color);
+}
+
+/* Amélioration des graphiques en mode sombre */
+[data-theme="dark"] canvas {
+    filter: brightness(0.95);
+}
+
+/* Toggle switch en mode sombre */
+[data-theme="dark"] .toggle-slider {
+    background-color: #475569;
+}
+
+[data-theme="dark"] input:checked + .toggle-slider {
+    background-color: var(--primary-color);
+}
+
+/* Boutons en mode sombre */
+[data-theme="dark"] .btn-upload,
+[data-theme="dark"] .btn-secondary {
+    background: var(--bg-color);
+    border-color: var(--border-color);
+    color: var(--text-dark);
+}
+
+[data-theme="dark"] .btn-upload:hover,
+[data-theme="dark"] .btn-secondary:hover {
+    border-color: var(--primary-color);
+    background: rgba(0, 188, 212, 0.1);
+}
+
+/* Barres de progression en mode sombre */
+[data-theme="dark"] .demographic-bar,
+[data-theme="dark"] .traffic-bar {
+    background: #0F172A;
+}
+
+/* Insights et items en mode sombre */
+[data-theme="dark"] .insight-item,
+[data-theme="dark"] .video-item,
+[data-theme="dark"] .connection-status {
+    background: var(--bg-color);
+}
+
+/* Page de login en mode sombre */
+[data-theme="dark"] .login-card {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .login-content {
+    background: var(--card-bg);
+}
+
+[data-theme="dark"] .search-results {
+    background: var(--card-bg);
+    border-color: var(--border-color);
+}
+
+/* Notifications en mode sombre */
+[data-theme="dark"] .notification {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+/* Amélioration de la lisibilité */
+[data-theme="dark"] .stat-value,
+[data-theme="dark"] h1, 
+[data-theme="dark"] h2, 
+[data-theme="dark"] h3,
+[data-theme="dark"] h4 {
+    color: var(--text-dark);
+}
+
+[data-theme="dark"] .subtitle,
+[data-theme="dark"] .section-description,
+[data-theme="dark"] p {
+    color: var(--text-light);
+}
+
+/* Prévisualisation des thèmes dans settings */
+[data-theme="dark"] .theme-preview.theme-light {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+[data-theme="dark"] .theme-preview.theme-dark {
+    background: #1E293B;
+    border: 2px solid #334155;
+}
+
+[data-theme="light"] .theme-preview.theme-dark {
+    background: #1E293B;
+}
+
+[data-theme="light"] .theme-preview.theme-light {
+    background: #f0f0f0;
+}
+
+/* Ajustement du dot dans la prévisualisation */
+[data-theme="dark"] .theme-preview .theme-dot {
+    background: #F1F5F9;
+}
+
+[data-theme="light"] .theme-preview.theme-dark .theme-dot {
+    background: #F1F5F9;
+}
+
+/* Scrollbar en mode sombre */
+[data-theme="dark"] ::-webkit-scrollbar-track {
+    background: var(--bg-color);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-color);
+}

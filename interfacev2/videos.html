@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TubeAI - Mes Vidéos</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="videos-style.css">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <span class="logo-text">TubeAI</span>
+        </div>
+        
+        <nav class="navigation">
+            <p class="nav-label">Navigation</p>
+            <ul class="nav-menu">
+                <li class="nav-item" onclick="window.location.href='index.html'">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li class="nav-item" onclick="window.location.href='generation-ia.html'">
+                    <i class="fas fa-magic"></i>
+                    <span>Génération IA</span>
+                </li>
+                <li class="nav-item active" onclick="window.location.href='videos.html'">
+                    <i class="fas fa-video"></i>
+                    <span>Mes Vidéos</span>
+                </li>
+                <li class="nav-item" onclick="window.location.href='analytics.html'">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </li>
+                <li class="nav-item" onclick="window.location.href='settings.html'">
+                    <i class="fas fa-cog"></i>
+                    <span>Paramètres</span>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <button class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </header>
+
+        <!-- Videos Content -->
+        <div class="videos-container">
+            <!-- Header -->
+            <div class="videos-header">
+                <div>
+                    <h1>Mes Vidéos</h1>
+                    <p class="subtitle">Gérez et analysez toutes vos vidéos YouTube</p>
+                </div>
+                <button class="btn-new-video">
+                    <i class="fas fa-plus"></i>
+                    Nouvelle Vidéo
+                </button>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="quick-stats-grid">
+                <div class="quick-stat-card">
+                    <div class="stat-icon-wrapper red">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalVideos">24</div>
+                        <div class="stat-label">Vidéos publiées</div>
+                    </div>
+                </div>
+                <div class="quick-stat-card">
+                    <div class="stat-icon-wrapper cyan">
+                        <i class="fas fa-eye"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalViews">1.2M</div>
+                        <div class="stat-label">Vues totales</div>
+                    </div>
+                </div>
+                <div class="quick-stat-card">
+                    <div class="stat-icon-wrapper green">
+                        <i class="fas fa-thumbs-up"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalLikes">89K</div>
+                        <div class="stat-label">Likes totaux</div>
+                    </div>
+                </div>
+                <div class="quick-stat-card">
+                    <div class="stat-icon-wrapper purple">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value" id="totalWatchTime">48h</div>
+                        <div class="stat-label">Temps de visionnage</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters & Search -->
+            <div class="filters-card">
+                <div class="search-wrapper">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="videoSearch" placeholder="Rechercher une vidéo..." class="search-input">
+                </div>
+                <div class="filters-wrapper">
+                    <select class="filter-select" id="statusFilter">
+                        <option value="all">
+                            <i class="fas fa-filter"></i> Tous
+                        </option>
+                        <option value="published">Publiées</option>
+                        <option value="draft">Brouillons</option>
+                        <option value="scheduled">Planifiées</option>
+                    </select>
+                    <select class="filter-select" id="sortFilter">
+                        <option value="recent">Plus récentes</option>
+                        <option value="views">Plus de vues</option>
+                        <option value="likes">Plus de likes</option>
+                        <option value="comments">Plus de commentaires</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Videos List -->
+            <div class="videos-list" id="videosList">
+                <div class="loading-state">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Chargement des vidéos...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="theme.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+    <script src="videos.js"></script>
+</body>
+</html>

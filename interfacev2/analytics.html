@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TubeAI - Analytics</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="analytics-style.css">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-play-circle"></i>
+            </div>
+            <span class="logo-text">TubeAI</span>
+        </div>
+        
+        <nav class="navigation">
+            <p class="nav-label">Navigation</p>
+            <ul class="nav-menu">
+                <li class="nav-item" onclick="window.location.href='index.html'">
+                    <i class="fas fa-th-large"></i>
+                    <span>Dashboard</span>
+                </li>
+                <li class="nav-item" onclick="window.location.href='generation-ia.html'">
+                    <i class="fas fa-magic"></i>
+                    <span>Génération IA</span>
+                </li>
+                <li class="nav-item" onclick="window.location.href='videos.html'">
+                    <i class="fas fa-video"></i>
+                    <span>Mes Vidéos</span>
+                </li>
+                <li class="nav-item active" onclick="window.location.href='analytics.html'">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analytics</span>
+                </li>
+                <li class="nav-item" onclick="window.location.href='settings.html'">
+                    <i class="fas fa-cog"></i>
+                    <span>Paramètres</span>
+                </li>
+            </ul>
+        </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <button class="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </header>
+
+        <!-- Analytics Content -->
+        <div class="analytics-container">
+            <div class="analytics-header">
+                <h1>Analytics</h1>
+                <p class="subtitle">Analysez les performances de votre chaîne</p>
+            </div>
+
+            <!-- Time Period Selector -->
+            <div class="period-selector">
+                <button class="period-btn active" data-period="7">7 jours</button>
+                <button class="period-btn" data-period="30">30 jours</button>
+                <button class="period-btn" data-period="90">90 jours</button>
+                <button class="period-btn" data-period="365">1 an</button>
+            </div>
+
+            <!-- Main Stats -->
+            <div class="analytics-stats-grid">
+                <div class="analytics-stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Vues totales</span>
+                        <i class="fas fa-eye stat-icon blue"></i>
+                    </div>
+                    <div class="stat-value" id="totalViews">175.1K</div>
+                    <div class="stat-change positive">+12.5%</div>
+                </div>
+
+                <div class="analytics-stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Abonnés</span>
+                        <i class="fas fa-users stat-icon green"></i>
+                    </div>
+                    <div class="stat-value" id="totalSubscribers">50.8K</div>
+                    <div class="stat-change positive">+2.3%</div>
+                </div>
+
+                <div class="analytics-stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Temps de visionnage</span>
+                        <i class="fas fa-clock stat-icon orange"></i>
+                    </div>
+                    <div class="stat-value" id="watchTime">8.2K h</div>
+                    <div class="stat-change positive">+8.1%</div>
+                </div>
+
+                <div class="analytics-stat-card">
+                    <div class="stat-header">
+                        <span class="stat-label">Taux d'engagement</span>
+                        <i class="fas fa-chart-pie stat-icon purple"></i>
+                    </div>
+                    <div class="stat-value" id="engagementRate">7.8%</div>
+                    <div class="stat-change positive">+0.5%</div>
+                </div>
+            </div>
+
+            <!-- Charts Section -->
+            <div class="charts-grid">
+                <!-- Views Evolution Chart -->
+                <div class="chart-card full-width">
+                    <div class="chart-header">
+                        <div>
+                            <i class="fas fa-chart-area"></i>
+                            <h3>Évolution des vues</h3>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="viewsChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Subscribers Growth Chart -->
+                <div class="chart-card full-width">
+                    <div class="chart-header">
+                        <div>
+                            <i class="fas fa-user-plus"></i>
+                            <h3>Croissance des abonnés</h3>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="subscribersChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Section -->
+            <div class="analytics-bottom-grid">
+                <!-- Top Videos -->
+                <div class="analytics-card">
+                    <div class="card-header">
+                        <i class="fas fa-fire"></i>
+                        <h3>Top 5 Vidéos</h3>
+                    </div>
+                    <div class="top-videos-list" id="topVideosList">
+                        <div class="loading-placeholder">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Chargement...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Age Demographics -->
+                <div class="analytics-card">
+                    <div class="card-header">
+                        <i class="fas fa-users"></i>
+                        <h3>Tranches d'âge</h3>
+                    </div>
+                    <div class="demographics-container">
+                        <div class="demographic-item">
+                            <div class="demographic-info">
+                                <span class="age-range">18-24</span>
+                                <span class="percentage">35%</span>
+                            </div>
+                            <div class="demographic-bar">
+                                <div class="bar-fill" style="width: 35%; background: #00BCD4;"></div>
+                            </div>
+                        </div>
+                        <div class="demographic-item">
+                            <div class="demographic-info">
+                                <span class="age-range">25-34</span>
+                                <span class="percentage">40%</span>
+                            </div>
+                            <div class="demographic-bar">
+                                <div class="bar-fill" style="width: 40%; background: #10B981;"></div>
+                            </div>
+                        </div>
+                        <div class="demographic-item">
+                            <div class="demographic-info">
+                                <span class="age-range">35-44</span>
+                                <span class="percentage">15%</span>
+                            </div>
+                            <div class="demographic-bar">
+                                <div class="bar-fill" style="width: 15%; background: #F59E0B;"></div>
+                            </div>
+                        </div>
+                        <div class="demographic-item">
+                            <div class="demographic-info">
+                                <span class="age-range">45+</span>
+                                <span class="percentage">10%</span>
+                            </div>
+                            <div class="demographic-bar">
+                                <div class="bar-fill" style="width: 10%; background: #8B5CF6;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Insights -->
+                <div class="analytics-card full-width-mobile">
+                    <div class="card-header">
+                        <i class="fas fa-lightbulb"></i>
+                        <h3>Insights IA</h3>
+                    </div>
+                    <div class="insights-list">
+                        <div class="insight-item">
+                            <i class="fas fa-arrow-up insight-icon success"></i>
+                            <div class="insight-content">
+                                <h4>Meilleur moment</h4>
+                                <p>Vos vidéos du samedi à 18h ont +33% de vues en moyenne</p>
+                            </div>
+                        </div>
+                        <div class="insight-item">
+                            <i class="fas fa-chart-line insight-icon primary"></i>
+                            <div class="insight-content">
+                                <h4>Sujets tendance</h4>
+                                <p>Les tutoriels d'IA génèrent 2x plus d'engagement</p>
+                            </div>
+                        </div>
+                        <div class="insight-item">
+                            <i class="fas fa-users insight-icon info"></i>
+                            <div class="insight-content">
+                                <h4>Optimisation</h4>
+                                <p>Vos miniatures avec visages ont +45% de CTR</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Traffic Sources -->
+                <div class="analytics-card">
+                    <div class="card-header">
+                        <i class="fas fa-share-alt"></i>
+                        <h3>Sources de trafic</h3>
+                    </div>
+                    <div class="traffic-sources">
+                        <div class="traffic-item">
+                            <div class="traffic-label">
+                                <span class="traffic-dot" style="background: #00BCD4;"></span>
+                                <span>Recherche YouTube</span>
+                            </div>
+                            <div class="traffic-stats">
+                                <span class="traffic-percentage">42%</span>
+                                <div class="traffic-bar">
+                                    <div class="traffic-bar-fill" style="width: 42%; background: #00BCD4;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="traffic-item">
+                            <div class="traffic-label">
+                                <span class="traffic-dot" style="background: #10B981;"></span>
+                                <span>Suggestions</span>
+                            </div>
+                            <div class="traffic-stats">
+                                <span class="traffic-percentage">28%</span>
+                                <div class="traffic-bar">
+                                    <div class="traffic-bar-fill" style="width: 28%; background: #10B981;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="traffic-item">
+                            <div class="traffic-label">
+                                <span class="traffic-dot" style="background: #F59E0B;"></span>
+                                <span>Externes</span>
+                            </div>
+                            <div class="traffic-stats">
+                                <span class="traffic-percentage">18%</span>
+                                <div class="traffic-bar">
+                                    <div class="traffic-bar-fill" style="width: 18%; background: #F59E0B;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="traffic-item">
+                            <div class="traffic-label">
+                                <span class="traffic-dot" style="background: #8B5CF6;"></span>
+                                <span>Playlists</span>
+                            </div>
+                            <div class="traffic-stats">
+                                <span class="traffic-percentage">12%</span>
+                                <div class="traffic-bar">
+                                    <div class="traffic-bar-fill" style="width: 12%; background: #8B5CF6;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="theme.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="script.js"></script>
+    <script src="analytics.js"></script>
+</body>
+</html>

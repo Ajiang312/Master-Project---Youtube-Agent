@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TubeAI - Connexion</title>
+    <link rel="stylesheet" href="login-style.css">
+    <link rel="stylesheet" href="theme.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo-section">
+                <div class="logo-icon">
+                    <i class="fas fa-play-circle"></i>
+                </div>
+                <h1 class="logo-text">TubeAI</h1>
+                <p class="tagline">Gérez votre contenu YouTube avec l'IA</p>
+            </div>
+
+            <div class="login-content">
+                <h2>Sélectionnez votre chaîne</h2>
+                <p class="subtitle">Connectez-vous pour accéder à votre dashboard</p>
+
+                <!-- Formulaire de recherche -->
+                <div class="search-section">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input 
+                            type="text" 
+                            id="channelSearch" 
+                            placeholder="Rechercher une chaîne YouTube..."
+                            autocomplete="off"
+                        >
+                    </div>
+                    
+                    <div id="searchResults" class="search-results"></div>
+                </div>
+
+                <!-- Liste des chaînes disponibles -->
+                <div class="channels-section">
+                    <h3>Chaînes disponibles</h3>
+                    <div id="channelsList" class="channels-list">
+                        <div class="loading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Chargement des chaînes...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message d'erreur -->
+                <div id="errorMessage" class="error-message" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="login-footer">
+            <p>Master Project - Agent IA - Roman, Antoine & Tess</p>
+        </div>
+    </div>
+
+    <!-- Importer Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- Scripts -->
+    <script src="theme.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="login.js"></script>
+</body>
+</html>
