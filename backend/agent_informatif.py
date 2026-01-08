@@ -1,0 +1,268 @@
+import os
+from dotenv import load_dotenv
+from supabase import create_client, Client
+from openai import OpenAI
+from langchain_openai import ChatOpenAI
+from langchain_classic.agents import AgentExecutor, create_openai_functions_agent
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.tools import tool
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.runnables.history import RunnableWithMessageHistory
+
+load_dotenv()
+
+# --- CONFIGURATION ---
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_KEY")
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+client_openai = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+
+# Dictionnaire global pour stocker la mémoire des sessions
+store = {}
+
+def get_session_history(session_id: str):
+    """Récupère ou crée l'historique pour une session donnée."""
+    if session_id not in store:
+        store[session_id] = ChatMessageHistory()
+    return store[session_id]
+
+def clear_session_history(session_id: str):
+    """Supprime la mémoire d'une session spécifique."""
+    if session_id in store:
+        del store[session_id]
+        return True
+    return False
+
+# --- OUTILS (TOOLS) ---
+@tool
+def rechercher_transcription(query: str):
+    """
+    Recherche dans le texte des vidéos pour répondre sur le fond (ex: Eddie Tipton).
+    Utilise la recherche vectorielle pour trouver des segments pertinents dans les transcriptions.
+    """
+    try:
+        # Création de l'embedding pour la recherche vectorielle
+        emb = client_openai.embeddings.create(input=query, model="text-embedding-3-small").data[0].embedding
+        
+        # Appel de la fonction RPC SQL pour trouver les segments proches
+        res = supabase.rpc('match_video_vectors', {'query_embedding': emb, 'match_threshold': 0.2, 'match_count': 5}).execute()
+        
+        if not res.data:
+            return "Aucun contenu trouvé dans les transcriptions pour cette requête."
+        
+        # Formatage incluant les métadonnées pour que l'IA puisse citer ses sources
+        resultats = []
+        for d in res.data:
+            v_id = d.get('video_id', 'Inconnu')
+            v_title = d.get('title', 'Sans titre')
+            v_content = d.get('content', '')
+            similarity = d.get('similarity', 0.0)
+            
+            resultats.append(
+                f"[METADATA | ID: {v_id} | Titre: {v_title} | Similarité: {similarity:.2f}]\n{v_content}"
+            )
+        
+        return "\n---\n".join(resultats)
+    except Exception as e:
+        return f"Erreur lors de la recherche: {str(e)}"
+
+@tool
+def calculer_statistiques_videos(query_sql: str = None):
+    """
+    Calcule des statistiques sur les vidéos (vues, likes, commentaires, engagement).
+    Peut exécuter des requêtes SQL SELECT sur la table public.videos.
+    
+    Exemples de requêtes utiles:
+    - "SELECT AVG((like_count + comment_count)::float / NULLIF(view_count, 0) * 100) as engagement_moyen FROM videos WHERE view_count > 0"
+    - "SELECT title, view_count, like_count, comment_count, ((like_count + comment_count)::float / NULLIF(view_count, 0) * 100) as engagement_rate FROM videos ORDER BY engagement_rate DESC LIMIT 10"
+    - "SELECT COUNT(*) as total_videos, SUM(view_count) as total_vues, SUM(like_count) as total_likes FROM videos"
+    
+    Si query_sql n'est pas fourni, retourne les statistiques générales.
+    """
+    try:
+        if query_sql:
+            # Exécution de la requête SQL personnalisée
+            # Utilisation de la fonction RPC safe_select_query si disponible, sinon direct SQL
+            try:
+                res = supabase.rpc('safe_select_query', {'query_text': query_sql}).execute()
+                if res.data:
+                    return f"Résultats de la requête:\n{res.data}"
+            except:
+                # Fallback: exécution directe via Supabase (si autorisé)
+                # Note: Supabase client ne supporte pas directement execute_sql, 
+                # donc on utilise une approche différente
+                pass
+        
+        # Statistiques par défaut si aucune requête fournie
+        res = supabase.table("videos").select("video_id, title, view_count, like_count, comment_count").execute()
+        
+        if not res.data:
+            return "Aucune vidéo trouvée dans la base de données."
+        
+        # Calcul des statistiques agrégées
+        total_videos = len(res.data)
+        total_vues = sum(v.get('view_count', 0) or 0 for v in res.data)
+        total_likes = sum(v.get('like_count', 0) or 0 for v in res.data)
+        total_comments = sum(v.get('comment_count', 0) or 0 for v in res.data)
+        
+        # Calcul du taux d'engagement moyen
+        engagements = []
+        for v in res.data:
+            vues = v.get('view_count', 0) or 0
+            likes = v.get('like_count', 0) or 0
+            coms = v.get('comment_count', 0) or 0
+            if vues > 0:
+                engagement = ((likes + coms) / vues) * 100
+                engagements.append(engagement)
+        
+        engagement_moyen = sum(engagements) / len(engagements) if engagements else 0
+        
+        # Top 5 vidéos par engagement
+        videos_with_engagement = []
+        for v in res.data:
+            vues = v.get('view_count', 0) or 0
+            likes = v.get('like_count', 0) or 0
+            coms = v.get('comment_count', 0) or 0
+            if vues > 0:
+                engagement = ((likes + coms) / vues) * 100
+                videos_with_engagement.append({
+                    'title': v.get('title', 'Sans titre'),
+                    'engagement': engagement,
+                    'vues': vues,
+                    'likes': likes,
+                    'comments': coms
+                })
+        
+        top_5 = sorted(videos_with_engagement, key=lambda x: x['engagement'], reverse=True)[:5]
+        
+        result = (
+            f"Statistiques globales:\n"
+            f"- Nombre total de vidéos: {total_videos}\n"
+            f"- Total de vues: {total_vues:,}\n"
+            f"- Total de likes: {total_likes:,}\n"
+            f"- Total de commentaires: {total_comments:,}\n"
+            f"- Taux d'engagement moyen: {engagement_moyen:.2f}%\n\n"
+            f"Top 5 vidéos par engagement:\n"
+        )
+        
+        for i, vid in enumerate(top_5, 1):
+            result += (
+                f"{i}. {vid['title']}\n"
+                f"   Engagement: {vid['engagement']:.2f}% | "
+                f"Vues: {vid['vues']:,} | "
+                f"Likes: {vid['likes']:,} | "
+                f"Commentaires: {vid['comments']:,}\n"
+            )
+        
+        return result
+        
+    except Exception as e:
+        return f"Erreur lors du calcul des statistiques: {str(e)}"
+
+@tool
+def analyser_video_specifique(video_title_or_id: str):
+    """
+    Analyse les statistiques d'une vidéo spécifique par son titre ou ID.
+    Calcule le taux d'engagement et retourne toutes les métriques.
+    """
+    try:
+        # Recherche par ID d'abord (plus rapide)
+        res = supabase.table("videos").select(
+            "video_id, title, view_count, like_count, comment_count, published_at"
+        ).eq("video_id", video_title_or_id).execute()
+        
+        # Si pas trouvé par ID, recherche par titre
+        if not res.data or len(res.data) == 0:
+            res = supabase.table("videos").select(
+                "video_id, title, view_count, like_count, comment_count, published_at"
+            ).ilike("title", f"%{video_title_or_id}%").limit(1).execute()
+        
+        if not res.data or len(res.data) == 0:
+            return f"Vidéo '{video_title_or_id}' non trouvée."
+        
+        data = res.data[0]
+        vues = data.get('view_count', 0) or 0
+        likes = data.get('like_count', 0) or 0
+        coms = data.get('comment_count', 0) or 0
+        title = data.get('title', 'Sans titre')
+        video_id = data.get('video_id', 'Inconnu')
+        published = data.get('published_at', 'Date inconnue')
+        
+        # Calculs
+        engagement = ((likes + coms) / vues * 100) if vues > 0 else 0.0
+        like_rate = (likes / vues * 100) if vues > 0 else 0.0
+        comment_rate = (coms / vues * 100) if vues > 0 else 0.0
+        
+        return (
+            f"Statistiques pour '{title}' (ID: {video_id}):\n"
+            f"- Publiée le: {published}\n"
+            f"- Vues: {vues:,}\n"
+            f"- Likes: {likes:,} ({like_rate:.2f}%)\n"
+            f"- Commentaires: {coms:,} ({comment_rate:.2f}%)\n"
+            f"- Taux d'engagement global: {engagement:.2f}%"
+        )
+        
+    except Exception as e:
+        return f"Erreur lors de l'analyse: {str(e)}"
+
+# --- CONSTRUCTION DE L'AGENT ---
+def get_agent_executor():
+    """
+    Configure l'agent avec gestion de mémoire intégrée et outils optimisés.
+    Combine la recherche vectorielle (RAG) avec les statistiques SQL.
+    
+    Returns:
+        RunnableWithMessageHistory: Agent exécutable avec gestion d'historique
+    """
+    # Tous les outils disponibles
+    tools = [
+        rechercher_transcription,      # RAG - Recherche dans transcriptions
+        calculer_statistiques_videos,  # Statistiques globales et SQL
+        analyser_video_specifique      # Analyse d'une vidéo spécifique
+    ]
+    
+    # Configuration du LLM
+    llm = ChatOpenAI(model="gpt-4o-mini", temperature=0, max_tokens=2000, timeout=30)
+    
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", """Tu es un assistant expert en analyse de vidéos YouTube.
+        
+        Tu as accès à trois outils principaux :
+        1. rechercher_transcription : Pour rechercher du contenu dans les transcriptions de vidéos (questions sur le fond, dialogues, sujets abordés)
+        2. calculer_statistiques_videos : Pour obtenir des statistiques globales (taux d'engagement moyen, totaux, top vidéos)
+        3. analyser_video_specifique : Pour analyser une vidéo spécifique par son titre ou ID
+        
+        INSTRUCTIONS IMPORTANTES :
+        - Utilise toujours les outils pour répondre. Ne devine jamais.
+        - Pour les questions sur le CONTENU des vidéos (ex: "Qui est Eddie Tipton ?", "Que dit la vidéo sur..."), utilise rechercher_transcription
+        - Pour les questions sur les STATISTIQUES GLOBALES (ex: "taux d'engagement moyen", "combien de vues au total"), utilise calculer_statistiques_videos
+        - Pour les questions sur une VIDÉO SPÉCIFIQUE (ex: "statistiques de la vidéo X"), utilise analyser_video_specifique
+        - Le taux d'engagement se calcule : ((like_count + comment_count) / view_count) * 100
+        - Pour toute question portant sur une DATE, un NOMBRE DE VUES ou une STATISTIQUE, utilise PRIORITAIREMENT 'analyser_video_specifique' ou 'calculer_statistiques_videos'.
+        - N'utilise 'rechercher_transcription' QUE pour des questions sur le contenu narratif (ce qui est dit).
+        - Si tu trouves une date dans une transcription, ne la considère JAMAIS comme la date de publication officielle de la vidéo. Fies-toi uniquement aux métadonnées SQL.
+        
+        CONSIGNE DE CITATION DES SOURCES :
+        - Si l'utilisateur pose une question sur le contenu, mentionne la source si disponible dans [METADATA]
+        - Si l'utilisateur demande explicitement la source, affiche : 'Cette information provient de la vidéo : [TITRE] (ID: [ID])'
+        
+        Sois précis, concis et toujours basé sur les données réelles."""),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{input}"),
+        MessagesPlaceholder(variable_name="agent_scratchpad"),
+    ])
+    
+    # Création de l'agent
+    try:
+        agent = create_openai_functions_agent(llm, tools, prompt)
+        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True, max_iterations=10, handle_parsing_errors=True, return_intermediate_steps=False)
+
+        # Encapsulation avec gestion d'historique
+        return RunnableWithMessageHistory(agent_executor, get_session_history, input_messages_key="input", history_messages_key="chat_history")
+    except Exception as e:
+        print(f"Erreur lors de la création de l'agent: {e}")
+        raise
+
+
+if __name__ == "__main__":
+    get_agent_executor()
