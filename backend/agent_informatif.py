@@ -37,8 +37,19 @@ def clear_session_history(session_id: str):
 @tool
 def rechercher_transcription(query: str):
     """
-    Recherche dans le texte des vidéos pour répondre sur le fond (ex: Eddie Tipton).
+    UNIQUEMENT pour rechercher le CONTENU NARRATIF des vidéos (ce qui est dit, discuté, expliqué).
     Utilise la recherche vectorielle pour trouver des segments pertinents dans les transcriptions.
+    
+    NE PAS utiliser pour:
+    - Les statistiques (vues, likes, commentaires, engagement)
+    - Les métriques ou nombres
+    - Les dates de publication
+    - Les requêtes sur la structure de la base de données
+    
+    Exemples d'utilisation correcte:
+    - "Qui est Eddie Tipton ?"
+    - "Que dit la vidéo sur les algorithmes de loterie ?"
+    - "Explique-moi le concept de..."
     """
     try:
         # Création de l'embedding pour la recherche vectorielle
@@ -66,181 +77,102 @@ def rechercher_transcription(query: str):
     except Exception as e:
         return f"Erreur lors de la recherche: {str(e)}"
 
-@tool
-def calculer_statistiques_videos(query_sql: str = None):
-    """
-    Calcule des statistiques sur les vidéos (vues, likes, commentaires, engagement).
-    Peut exécuter des requêtes SQL SELECT sur la table public.videos.
-    
-    Exemples de requêtes utiles:
-    - "SELECT AVG((like_count + comment_count)::float / NULLIF(view_count, 0) * 100) as engagement_moyen FROM videos WHERE view_count > 0"
-    - "SELECT title, view_count, like_count, comment_count, ((like_count + comment_count)::float / NULLIF(view_count, 0) * 100) as engagement_rate FROM videos ORDER BY engagement_rate DESC LIMIT 10"
-    - "SELECT COUNT(*) as total_videos, SUM(view_count) as total_vues, SUM(like_count) as total_likes FROM videos"
-    
-    Si query_sql n'est pas fourni, retourne les statistiques générales.
-    """
-    try:
-        if query_sql:
-            # Exécution de la requête SQL personnalisée
-            # Utilisation de la fonction RPC safe_select_query si disponible, sinon direct SQL
-            try:
-                res = supabase.rpc('safe_select_query', {'query_text': query_sql}).execute()
-                if res.data:
-                    return f"Résultats de la requête:\n{res.data}"
-            except:
-                # Fallback: exécution directe via Supabase (si autorisé)
-                # Note: Supabase client ne supporte pas directement execute_sql, 
-                # donc on utilise une approche différente
-                pass
-        
-        # Statistiques par défaut si aucune requête fournie
-        res = supabase.table("videos").select("video_id, title, view_count, like_count, comment_count").execute()
-        
-        if not res.data:
-            return "Aucune vidéo trouvée dans la base de données."
-        
-        # Calcul des statistiques agrégées
-        total_videos = len(res.data)
-        total_vues = sum(v.get('view_count', 0) or 0 for v in res.data)
-        total_likes = sum(v.get('like_count', 0) or 0 for v in res.data)
-        total_comments = sum(v.get('comment_count', 0) or 0 for v in res.data)
-        
-        # Calcul du taux d'engagement moyen
-        engagements = []
-        for v in res.data:
-            vues = v.get('view_count', 0) or 0
-            likes = v.get('like_count', 0) or 0
-            coms = v.get('comment_count', 0) or 0
-            if vues > 0:
-                engagement = ((likes + coms) / vues) * 100
-                engagements.append(engagement)
-        
-        engagement_moyen = sum(engagements) / len(engagements) if engagements else 0
-        
-        # Top 5 vidéos par engagement
-        videos_with_engagement = []
-        for v in res.data:
-            vues = v.get('view_count', 0) or 0
-            likes = v.get('like_count', 0) or 0
-            coms = v.get('comment_count', 0) or 0
-            if vues > 0:
-                engagement = ((likes + coms) / vues) * 100
-                videos_with_engagement.append({
-                    'title': v.get('title', 'Sans titre'),
-                    'engagement': engagement,
-                    'vues': vues,
-                    'likes': likes,
-                    'comments': coms
-                })
-        
-        top_5 = sorted(videos_with_engagement, key=lambda x: x['engagement'], reverse=True)[:5]
-        
-        result = (
-            f"Statistiques globales:\n"
-            f"- Nombre total de vidéos: {total_videos}\n"
-            f"- Total de vues: {total_vues:,}\n"
-            f"- Total de likes: {total_likes:,}\n"
-            f"- Total de commentaires: {total_comments:,}\n"
-            f"- Taux d'engagement moyen: {engagement_moyen:.2f}%\n\n"
-            f"Top 5 vidéos par engagement:\n"
-        )
-        
-        for i, vid in enumerate(top_5, 1):
-            result += (
-                f"{i}. {vid['title']}\n"
-                f"   Engagement: {vid['engagement']:.2f}% | "
-                f"Vues: {vid['vues']:,} | "
-                f"Likes: {vid['likes']:,} | "
-                f"Commentaires: {vid['comments']:,}\n"
-            )
-        
-        return result
-        
-    except Exception as e:
-        return f"Erreur lors du calcul des statistiques: {str(e)}"
-
-@tool
-def analyser_video_specifique(video_title_or_id: str):
-    """
-    Analyse les statistiques d'une vidéo spécifique par son titre ou ID.
-    Calcule le taux d'engagement et retourne toutes les métriques.
-    """
-    try:
-        # Recherche par ID d'abord (plus rapide)
-        res = supabase.table("videos").select(
-            "video_id, title, view_count, like_count, comment_count, published_at"
-        ).eq("video_id", video_title_or_id).execute()
-        
-        # Si pas trouvé par ID, recherche par titre
-        if not res.data or len(res.data) == 0:
-            res = supabase.table("videos").select(
-                "video_id, title, view_count, like_count, comment_count, published_at"
-            ).ilike("title", f"%{video_title_or_id}%").limit(1).execute()
-        
-        if not res.data or len(res.data) == 0:
-            return f"Vidéo '{video_title_or_id}' non trouvée."
-        
-        data = res.data[0]
-        vues = data.get('view_count', 0) or 0
-        likes = data.get('like_count', 0) or 0
-        coms = data.get('comment_count', 0) or 0
-        title = data.get('title', 'Sans titre')
-        video_id = data.get('video_id', 'Inconnu')
-        published = data.get('published_at', 'Date inconnue')
-        
-        # Calculs
-        engagement = ((likes + coms) / vues * 100) if vues > 0 else 0.0
-        like_rate = (likes / vues * 100) if vues > 0 else 0.0
-        comment_rate = (coms / vues * 100) if vues > 0 else 0.0
-        
-        return (
-            f"Statistiques pour '{title}' (ID: {video_id}):\n"
-            f"- Publiée le: {published}\n"
-            f"- Vues: {vues:,}\n"
-            f"- Likes: {likes:,} ({like_rate:.2f}%)\n"
-            f"- Commentaires: {coms:,} ({comment_rate:.2f}%)\n"
-            f"- Taux d'engagement global: {engagement:.2f}%"
-        )
-        
-    except Exception as e:
-        return f"Erreur lors de l'analyse: {str(e)}"
+# NOTE: Les outils calculer_statistiques_videos et analyser_video_specifique ont été remplacés
+# par les outils MCP Supabase (execute_sql) qui offrent plus de flexibilité pour les requêtes SQL.
+# Ces fonctions sont conservées en commentaire pour référence historique.
 
 # --- CONSTRUCTION DE L'AGENT ---
-def get_agent_executor():
+def get_agent_executor(include_mcp_tools: bool = True):
     """
     Configure l'agent avec gestion de mémoire intégrée et outils optimisés.
-    Combine la recherche vectorielle (RAG) avec les statistiques SQL.
+    Combine la recherche vectorielle (RAG) avec les outils MCP Supabase pour les requêtes SQL.
+    
+    Args:
+        include_mcp_tools: Si True, inclut les outils MCP Supabase (default: True)
     
     Returns:
         RunnableWithMessageHistory: Agent exécutable avec gestion d'historique
     """
-    # Tous les outils disponibles
+    # Outil personnalisé pour la recherche vectorielle (RAG)
     tools = [
-        rechercher_transcription,      # RAG - Recherche dans transcriptions
-        calculer_statistiques_videos,  # Statistiques globales et SQL
-        analyser_video_specifique      # Analyse d'une vidéo spécifique
+        rechercher_transcription,      # RAG - Recherche dans transcriptions (recherche vectorielle)
     ]
+    
+    # Ajouter les outils MCP si demandé
+    if include_mcp_tools:
+        try:
+            from supabase_mcp import load_supabase_mcp_tools
+            mcp_tools = load_supabase_mcp_tools()
+            tools.extend(mcp_tools)
+            print(f"✅ {len(mcp_tools)} outils MCP chargés avec succès")
+            # Debug: afficher les noms des outils disponibles
+            print(f"📋 Outils disponibles: {[t.name for t in tools]}")
+        except Exception as e:
+            print(f"⚠️  Impossible de charger les outils MCP: {e}")
+            print("💡 L'agent continuera avec l'outil de recherche vectorielle uniquement")
     
     # Configuration du LLM
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0, max_tokens=2000, timeout=30)
     
+    # Construire la description des outils pour le prompt
+    # Lister tous les outils disponibles avec leurs noms exacts
+    tool_descriptions = []
+    
+    # Outil personnalisé
+    tool_descriptions.append("1. rechercher_transcription : UNIQUEMENT pour le contenu narratif des vidéos (ce qui est dit)")
+    
+    # Outils MCP
+    if include_mcp_tools and len(tools) > 1:
+        mcp_tool_names = [t.name for t in tools[1:]]  # Tous sauf le premier (rechercher_transcription)
+        for i, tool_name in enumerate(mcp_tool_names, start=2):
+            # Trouver la description de l'outil
+            tool_obj = next((t for t in tools if t.name == tool_name), None)
+            if tool_obj:
+                desc = tool_obj.description[:100] if hasattr(tool_obj, 'description') else tool_name
+                tool_descriptions.append(f"{i}. {tool_name} : {desc}")
+    
+    tools_text = "\n        ".join(tool_descriptions)
+    
     prompt = ChatPromptTemplate.from_messages([
-        ("system", """Tu es un assistant expert en analyse de vidéos YouTube.
+        ("system", f"""Tu es un assistant expert en analyse de vidéos YouTube et gestion de base de données Supabase.
         
-        Tu as accès à trois outils principaux :
-        1. rechercher_transcription : Pour rechercher du contenu dans les transcriptions de vidéos (questions sur le fond, dialogues, sujets abordés)
-        2. calculer_statistiques_videos : Pour obtenir des statistiques globales (taux d'engagement moyen, totaux, top vidéos)
-        3. analyser_video_specifique : Pour analyser une vidéo spécifique par son titre ou ID
+        Tu as accès aux outils suivants :
+        {tools_text}
         
-        INSTRUCTIONS IMPORTANTES :
-        - Utilise toujours les outils pour répondre. Ne devine jamais.
-        - Pour les questions sur le CONTENU des vidéos (ex: "Qui est Eddie Tipton ?", "Que dit la vidéo sur..."), utilise rechercher_transcription
-        - Pour les questions sur les STATISTIQUES GLOBALES (ex: "taux d'engagement moyen", "combien de vues au total"), utilise calculer_statistiques_videos
-        - Pour les questions sur une VIDÉO SPÉCIFIQUE (ex: "statistiques de la vidéo X"), utilise analyser_video_specifique
+        RÈGLES STRICTES DE SÉLECTION D'OUTILS :
+        
+        1. UTILISE execute_sql (MCP) pour TOUTES les questions concernant :
+           - Statistiques (nombre de vidéos, total de vues, likes, commentaires)
+           - Métriques (taux d'engagement, moyennes, totaux)
+           - Données numériques (vues, likes, commentaires, dates de publication)
+           - Structure de la base de données (tables, colonnes)
+           - Requêtes SQL personnalisées
+           
+           Exemples : "Quel est mon engagement moyen ?", "Combien de vues au total ?", 
+                      "Montre-moi les statistiques de la vidéo X", "Quelles tables existent ?"
+        
+        2. UTILISE rechercher_transcription UNIQUEMENT pour :
+           - Questions sur le CONTENU NARRATIF des vidéos (ce qui est dit, expliqué, discuté)
+           - Recherche de concepts, personnes, sujets abordés dans les transcriptions
+           
+           Exemples : "Qui est Eddie Tipton ?", "Que dit la vidéo sur les algorithmes ?",
+                      "Explique-moi le concept de..."
+        
+        3. UTILISE list_tables (MCP) pour connaître la structure de la base de données
+        
+        IMPORTANT :
+        - Si la question contient des mots comme "statistiques", "métriques", "vues", "likes", 
+          "commentaires", "engagement", "nombre", "total", "moyenne" → utilise execute_sql
+        - Si la question demande "qui", "quoi", "comment", "explique" sur un sujet/concept 
+          → utilise rechercher_transcription
+        - Ne JAMAIS utiliser rechercher_transcription pour des statistiques ou métriques
         - Le taux d'engagement se calcule : ((like_count + comment_count) / view_count) * 100
-        - Pour toute question portant sur une DATE, un NOMBRE DE VUES ou une STATISTIQUE, utilise PRIORITAIREMENT 'analyser_video_specifique' ou 'calculer_statistiques_videos'.
-        - N'utilise 'rechercher_transcription' QUE pour des questions sur le contenu narratif (ce qui est dit).
-        - Si tu trouves une date dans une transcription, ne la considère JAMAIS comme la date de publication officielle de la vidéo. Fies-toi uniquement aux métadonnées SQL.
+        
+        EXEMPLES DE REQUÊTES SQL UTILES :
+        - Statistiques globales : "SELECT COUNT(*) as total, SUM(view_count) as total_vues, SUM(like_count) as total_likes, SUM(comment_count) as total_comments FROM videos"
+        - Engagement moyen : "SELECT AVG((like_count + comment_count)::float / NULLIF(view_count, 0) * 100) as engagement_moyen FROM videos WHERE view_count > 0"
+        - Top 5 vidéos : "SELECT title, view_count, like_count, comment_count, ((like_count + comment_count)::float / NULLIF(view_count, 0) * 100) as engagement_rate FROM videos WHERE view_count > 0 ORDER BY engagement_rate DESC LIMIT 5"
+        - Vidéo spécifique : "SELECT video_id, title, view_count, like_count, comment_count, published_at FROM videos WHERE video_id = 'VIDEO_ID'"
         
         CONSIGNE DE CITATION DES SOURCES :
         - Si l'utilisateur pose une question sur le contenu, mentionne la source si disponible dans [METADATA]
