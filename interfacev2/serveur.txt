@@ -1,0 +1,7 @@
+dans le terminal, aller dans le dossier master project et lancer :
+python -m http.server 8000
+
++ dans le terminal de VS Code, lancer :
+python ./interfacev2/agent/app.py
+
+ouvrir sur internet : http://localhost:5001/login.html

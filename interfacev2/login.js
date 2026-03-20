@@ -1,256 +1,200 @@
-// login.js - Gestion de la page de connexion
+// login.js
 
-let allChannels = [];
-let selectedChannel = null;
+checkAuthState();
 
-// Charger les chaînes au démarrage
-document.addEventListener('DOMContentLoaded', async () => {
-    await loadChannels();
-    setupSearchListener();
+supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        loadUserData();
+    } else if (event === 'SIGNED_OUT') {
+        showAuthForm();
+    }
 });
 
-// Charger toutes les chaînes depuis Supabase
-async function loadChannels() {
-    const channelsList = document.getElementById('channelsList');
-    
-    try {
-        console.log('🔍 Tentative de chargement des chaînes...');
-        console.log('📡 Supabase URL:', SUPABASE_URL);
-        console.log('🔑 Supabase Key présente:', SUPABASE_ANON_KEY ? 'Oui ✅' : 'Non ❌');
-        
-        // Vérifier que Supabase est bien initialisé
-        if (typeof supabase === 'undefined') {
-            throw new Error('Supabase n\'est pas initialisé. Vérifiez que supabase-config.js est bien chargé.');
-        }
-        
-        const { data, error } = await supabase
-            .from('channels')
-            .select('*')
-            .order('title', { ascending: true });
-        
-        console.log('📊 Réponse Supabase:', { data, error });
-        
-        if (error) {
-            console.error('❌ Erreur Supabase:', error);
-            throw error;
-        }
-        
-        allChannels = data || [];
-        console.log('✅ Chaînes chargées:', allChannels.length);
-        
-        if (allChannels.length === 0) {
-            showEmptyState();
-        } else {
-            displayChannels(allChannels);
-        }
-        
-    } catch (error) {
-        console.error('💥 Erreur complète:', error);
-        showError(`Erreur: ${error.message || 'Impossible de charger les chaînes'}`);
-        
-        // Afficher des infos de debug dans la liste
-        channelsList.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-exclamation-triangle" style="color: #EF4444;"></i>
-                <p style="color: #EF4444; font-weight: 600;">Erreur de connexion</p>
-                <p style="font-size: 13px; margin-top: 10px; opacity: 0.7;">
-                    ${error.message}
-                </p>
-                <p style="font-size: 12px; margin-top: 10px; opacity: 0.5;">
-                    Vérifiez la console (F12) pour plus de détails
-                </p>
-            </div>
-        `;
-    }
-}
-
-// Afficher les chaînes
-function displayChannels(channels) {
-    const channelsList = document.getElementById('channelsList');
-    channelsList.innerHTML = '';
-    
-    if (channels.length === 0) {
-        channelsList.innerHTML = `
-            <div class="empty-state">
-                <i class="fas fa-search"></i>
-                <p>Aucune chaîne trouvée</p>
-            </div>
-        `;
+function showStatus(message, type = 'info') {
+    const statusEl = document.getElementById('status');
+    if (!message) {
+        statusEl.style.display = 'none';
+        statusEl.textContent = '';
+        statusEl.className = '';
         return;
     }
-    
-    channels.forEach(channel => {
-        const channelCard = createChannelCard(channel);
-        channelsList.appendChild(channelCard);
-    });
+
+    statusEl.textContent = message;
+    statusEl.className = `status-${type}`;
+    statusEl.style.display = 'block';
 }
 
-// Créer une carte de chaîne
-function createChannelCard(channel) {
-    const card = document.createElement('div');
-    card.className = 'channel-card';
-    card.dataset.channelId = channel.id;
-    
-    // Récupérer les initiales pour l'avatar
-    const initials = getInitials(channel.title);
-    
-    // Calculer les stats (si disponibles)
-    const subscriberCount = channel.subscriber_count 
-        ? formatNumber(channel.subscriber_count) + ' abonnés'
-        : 'Pas de données';
-    
-    const videoCount = channel.video_count
-        ? formatNumber(channel.video_count) + ' vidéos'
-        : '';
-    
-    card.innerHTML = `
-        <div class="channel-info">
-            <div class="channel-avatar">
-                ${channel.thumbnail_url 
-                    ? `<img src="${channel.thumbnail_url}" alt="${channel.title}">` 
-                    : initials
-                }
-            </div>
-            <div class="channel-details">
-                <div class="channel-name">${channel.title}</div>
-                <div class="channel-stats">${subscriberCount}${videoCount ? ' • ' + videoCount : ''}</div>
-            </div>
-        </div>
-        <i class="fas fa-arrow-right channel-arrow"></i>
-    `;
-    
-    // Ajouter l'événement de clic
-    card.addEventListener('click', () => selectChannel(channel, card));
-    
-    return card;
+function setLoading(isLoading) {
+    const form = document.getElementById('auth-form');
+    const signupBtn = document.getElementById('signup-btn');
+    const loginBtn = document.getElementById('login-btn');
+
+    if (isLoading) {
+        form.classList.add('loading');
+        signupBtn.disabled = true;
+        loginBtn.disabled = true;
+    } else {
+        form.classList.remove('loading');
+        signupBtn.disabled = false;
+        loginBtn.disabled = false;
+    }
 }
 
-// Sélectionner une chaîne
-function selectChannel(channel, cardElement) {
-    selectedChannel = channel;
-    
-    // Retirer la sélection des autres cartes
-    document.querySelectorAll('.channel-card').forEach(card => {
-        card.classList.remove('selected');
-    });
-    
-    // Marquer la carte sélectionnée
-    cardElement.classList.add('selected');
-    
-    // Sauvegarder dans le localStorage
-    localStorage.setItem('selectedChannel', JSON.stringify(channel));
-    
-    // Animation et redirection
+async function checkAuthState() {
+    const session = await getCurrentSession();
+    if (session) {
+        await loadUserData();
+    } else {
+        showAuthForm();
+    }
+}
+
+function showAuthForm() {
+    document.getElementById('auth-form').style.display = 'flex';
+    document.getElementById('user-info').classList.add('hidden');
+    document.getElementById('password').value = '';
+    showStatus('');
+    setLoading(false);
+}
+
+async function loadUserData() {
+    const user = await getCurrentUser();
+
+    if (!user) {
+        showAuthForm();
+        return;
+    }
+
+    document.getElementById('auth-form').style.display = 'none';
+    document.getElementById('user-info').classList.remove('hidden');
+
+    document.getElementById('user-email').textContent = user.email || '';
+    document.getElementById('user-id').textContent = user.id || '';
+
+    const channel = await getCurrentUserChannel();
+
+    if (!channel) {
+        document.getElementById('channel-id').textContent = 'Aucune chaîne trouvée';
+        showStatus('Connecté, mais aucune chaîne liée à cet utilisateur.', 'error');
+        setLoading(false);
+        return;
+    }
+
+    document.getElementById('channel-id').textContent = channel.channel_id || 'Non défini';
+    showStatus('Connexion réussie. Redirection...', 'success');
+
+    setLoading(false);
+
     setTimeout(() => {
         window.location.href = 'index.html';
-    }, 300);
+    }, 700);
 }
 
-// Configuration de la recherche
-function setupSearchListener() {
-    const searchInput = document.getElementById('channelSearch');
-    const searchResults = document.getElementById('searchResults');
-    
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
-        
-        if (query === '') {
-            searchResults.classList.remove('active');
-            displayChannels(allChannels);
+async function handleSignUp() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+    const channelId = document.getElementById('channel_id').value.trim();
+
+    if (!email || !password || !channelId) {
+        showStatus('Veuillez remplir l’email, le mot de passe et le Channel ID.', 'error');
+        return;
+    }
+
+    setLoading(true);
+    showStatus('Création du compte en cours...', 'info');
+
+    try {
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password
+        });
+
+        if (authError) {
+            showStatus('Erreur Auth: ' + authError.message, 'error');
+            setLoading(false);
             return;
         }
-        
-        // Filtrer les chaînes
-        const filtered = allChannels.filter(channel => 
-            channel.title.toLowerCase().includes(query) ||
-            (channel.description && channel.description.toLowerCase().includes(query))
-        );
-        
-        displayChannels(filtered);
-        
-        // Afficher les résultats dans la dropdown aussi
-        if (filtered.length > 0) {
-            displaySearchResults(filtered);
+
+        if (!authData.user) {
+            showStatus('Utilisateur non créé.', 'error');
+            setLoading(false);
+            return;
+        }
+
+        const { error: dbError } = await supabase
+            .from('channels')
+            .insert([{
+                user_id: authData.user.id,
+                channel_id: channelId,
+                title: `Chaîne de ${email}`
+            }]);
+
+        if (dbError) {
+            showStatus('Compte créé mais erreur DB: ' + dbError.message, 'error');
+            setLoading(false);
+            return;
+        }
+
+        if (authData.session) {
+            localStorage.removeItem('selectedChannel');
+            showStatus('Compte créé et connecté.', 'success');
+            await loadUserData();
         } else {
-            searchResults.innerHTML = `
-                <div class="empty-state" style="padding: 20px;">
-                    <i class="fas fa-search"></i>
-                    <p>Aucune chaîne trouvée pour "${query}"</p>
-                </div>
-            `;
-            searchResults.classList.add('active');
+            showStatus('Compte créé avec succès. Vérifiez votre email pour confirmer votre compte.', 'success');
+            setLoading(false);
         }
-    });
-    
-    // Fermer les résultats en cliquant en dehors
-    document.addEventListener('click', (e) => {
-        if (!searchResults.contains(e.target) && e.target !== searchInput) {
-            searchResults.classList.remove('active');
+    } catch (error) {
+        showStatus('Erreur inattendue: ' + error.message, 'error');
+        setLoading(false);
+    }
+}
+
+async function handleLogin() {
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    if (!email || !password) {
+        showStatus('Veuillez remplir l’email et le mot de passe.', 'error');
+        return;
+    }
+
+    setLoading(true);
+    showStatus('Connexion en cours...', 'info');
+
+    try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+        if (error) {
+            showStatus('Erreur de connexion: ' + error.message, 'error');
+            setLoading(false);
+            return;
         }
-    });
-}
 
-// Afficher les résultats de recherche
-function displaySearchResults(channels) {
-    const searchResults = document.getElementById('searchResults');
-    searchResults.innerHTML = '';
-    
-    channels.slice(0, 5).forEach(channel => {
-        const resultCard = createChannelCard(channel);
-        resultCard.style.animation = 'none';
-        searchResults.appendChild(resultCard);
-    });
-    
-    searchResults.classList.add('active');
-}
-
-// Obtenir les initiales d'un nom
-function getInitials(name) {
-    if (!name) return '?';
-    
-    const words = name.trim().split(' ');
-    if (words.length === 1) {
-        return words[0].charAt(0).toUpperCase();
+        if (data.session) {
+            localStorage.removeItem('selectedChannel');
+            showStatus('Connexion réussie.', 'success');
+            await loadUserData();
+        } else {
+            showStatus('Connexion impossible.', 'error');
+            setLoading(false);
+        }
+    } catch (error) {
+        showStatus('Erreur inattendue: ' + error.message, 'error');
+        setLoading(false);
     }
-    
-    return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase();
 }
 
-// Formater les nombres
-function formatNumber(num) {
-    if (num >= 1000000) {
-        return (num / 1000000).toFixed(1) + 'M';
+async function handleLogout() {
+    setLoading(true);
+
+    const ok = await logoutUser();
+
+    if (!ok) {
+        showStatus('Erreur lors de la déconnexion.', 'error');
+        setLoading(false);
+        return;
     }
-    if (num >= 1000) {
-        return (num / 1000).toFixed(1) + 'K';
-    }
-    return num.toString();
-}
 
-// Afficher l'état vide
-function showEmptyState() {
-    const channelsList = document.getElementById('channelsList');
-    channelsList.innerHTML = `
-        <div class="empty-state">
-            <i class="fas fa-youtube"></i>
-            <p>Aucune chaîne disponible</p>
-            <p style="font-size: 13px; margin-top: 10px; opacity: 0.7;">
-                Ajoutez des chaînes dans votre base de données Supabase
-            </p>
-        </div>
-    `;
-}
-
-// Afficher une erreur
-function showError(message) {
-    const errorDiv = document.getElementById('errorMessage');
-    const errorSpan = errorDiv.querySelector('span');
-    
-    errorSpan.textContent = message;
-    errorDiv.style.display = 'flex';
-    
-    // Masquer après 5 secondes
-    setTimeout(() => {
-        errorDiv.style.display = 'none';
-    }, 5000);
+    showStatus('Déconnexion réussie.', 'info');
+    showAuthForm();
 }

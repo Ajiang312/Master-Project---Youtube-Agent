@@ -103,16 +103,13 @@ function createVideoCard(video) {
 
     const status = video.published_at ? 'published' : 'draft';
 
-    // Miniature
     const thumbnail =
         video.thumbnails?.medium?.url ||
         video.thumbnails?.default?.url ||
         'https://via.placeholder.com/280x158/FF0000/FFFFFF?text=Video';
 
-    // Durée
     const duration = formatDuration(video.duration_seconds);
 
-    // Date
     const publishedDate = video.published_at
         ? new Date(video.published_at).toLocaleDateString('fr-FR', {
             day: 'numeric',
@@ -122,22 +119,25 @@ function createVideoCard(video) {
         : 'Brouillon';
 
     const trend = calculateTrend(video);
+    const formatBadge = video.is_short
+        ? `<div class="video-badge short">Short</div>`
+        : `<div class="video-badge long">Vidéo longue</div>`;
 
     card.innerHTML = `
         <div class="video-card-content">
             <div class="video-thumbnail">
-                <img src="${thumbnail}" alt="${video.title || 'Vidéo'}">
+                <img src="${thumbnail}" alt="${escapeHtml(video.title || 'Vidéo')}">
                 <div class="video-thumbnail-overlay">
                     <i class="fas fa-play play-icon"></i>
                 </div>
                 ${duration !== '0:00' ? `<div class="video-duration">${duration}</div>` : ''}
-                ${status === 'draft' ? `<div class="video-badge draft">Brouillon</div>` : ''}
+                ${status === 'draft' ? `<div class="video-badge draft">Brouillon</div>` : formatBadge}
             </div>
 
             <div class="video-info">
                 <div class="video-header">
                     <div>
-                        <h3 class="video-title">${video.title || 'Sans titre'}</h3>
+                        <h3 class="video-title">${escapeHtml(video.title || 'Sans titre')}</h3>
                         <div class="video-date">
                             <i class="fas fa-calendar"></i>
                             <span>${publishedDate}</span>
@@ -171,7 +171,7 @@ function createVideoCard(video) {
                     </div>
                 ` : `
                     <div class="draft-actions">
-                        <button class="btn-edit-draft" onclick="editDraft('${video.video_id}')">
+                        <button class="btn-edit-draft" onclick="editDraft(event, '${video.video_id}')">
                             Continuer l'édition
                         </button>
                     </div>
@@ -180,7 +180,17 @@ function createVideoCard(video) {
         </div>
     `;
 
+    card.addEventListener('click', () => openVideoDetail(video.video_id));
+
     return card;
+}
+
+// ==============================
+// Navigation vers détail vidéo
+// ==============================
+function openVideoDetail(videoId) {
+    localStorage.setItem('selectedVideoId', videoId);
+    window.location.href = 'video-detail.html';
 }
 
 // ==============================
@@ -188,8 +198,15 @@ function createVideoCard(video) {
 // ==============================
 function formatDuration(seconds) {
     if (!seconds || seconds <= 0) return '0:00';
-    const min = Math.floor(seconds / 60);
+
+    const hrs = Math.floor(seconds / 3600);
+    const min = Math.floor((seconds % 3600) / 60);
     const sec = seconds % 60;
+
+    if (hrs > 0) {
+        return `${hrs}:${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+    }
+
     return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
@@ -200,11 +217,21 @@ function formatNumber(num) {
     return num.toString();
 }
 
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
 // ==============================
 // Filtres & recherche
 // ==============================
 function setupFilters() {
     document.getElementById('statusFilter').addEventListener('change', applyFilters);
+    document.getElementById('typeFilter').addEventListener('change', applyFilters);
     document.getElementById('sortFilter').addEventListener('change', applyFilters);
 }
 
@@ -215,16 +242,23 @@ function setupSearch() {
 function applyFilters() {
     const search = document.getElementById('videoSearch').value.toLowerCase();
     const status = document.getElementById('statusFilter').value;
+    const type = document.getElementById('typeFilter').value;
     const sort = document.getElementById('sortFilter').value;
 
     let filtered = allVideos.filter(video => {
         const matchesSearch = !search || video.title?.toLowerCase().includes(search);
+
         const matchesStatus =
             status === 'all' ||
             (status === 'published' && video.published_at) ||
             (status === 'draft' && !video.published_at);
 
-        return matchesSearch && matchesStatus;
+        const matchesType =
+            type === 'all' ||
+            (type === 'short' && video.is_short === true) ||
+            (type === 'long' && video.is_short === false);
+
+        return matchesSearch && matchesStatus && matchesType;
     });
 
     filtered.sort((a, b) => {
@@ -234,6 +268,7 @@ function applyFilters() {
         return new Date(b.published_at || 0) - new Date(a.published_at || 0);
     });
 
+    filteredVideos = filtered;
     displayVideos(filtered);
 }
 
@@ -243,10 +278,12 @@ function applyFilters() {
 function showVideoMenu(event, videoId) {
     event.stopPropagation();
     console.log('Menu vidéo:', videoId);
+    showNotification(`Menu vidéo ${videoId} bientôt disponible`, 'info');
 }
 
-function editDraft(videoId) {
-    showNotification('Édition du brouillon bientôt disponible', 'info');
+function editDraft(event, videoId) {
+    event.stopPropagation();
+    showNotification(`Édition du brouillon ${videoId} bientôt disponible`, 'info');
 }
 
 // ==============================
@@ -289,6 +326,7 @@ function showNotification(message, type = 'info') {
         color: white;
         border-radius: 8px;
         z-index: 9999;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     `;
 
     document.body.appendChild(notification);

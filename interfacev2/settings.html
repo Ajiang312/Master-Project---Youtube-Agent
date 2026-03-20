@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TubeAI - Paramètres</title>
+    <title>CreaTube - Paramètres</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="settings-style.css">
     <link rel="stylesheet" href="theme.css">
@@ -16,9 +16,9 @@
             <div class="logo-icon">
                 <i class="fas fa-play-circle"></i>
             </div>
-            <span class="logo-text">TubeAI</span>
+            <span class="logo-text">CreaTube</span>
         </div>
-        
+
         <nav class="navigation">
             <p class="nav-label">Navigation</p>
             <ul class="nav-menu">
@@ -48,21 +48,56 @@
 
     <!-- Main Content -->
     <main class="main-content">
-        <!-- Header -->
         <header class="header">
             <button class="menu-toggle">
                 <i class="fas fa-bars"></i>
             </button>
         </header>
 
-        <!-- Settings Content -->
         <div class="settings-container">
             <div class="settings-header">
                 <h1>Paramètres</h1>
                 <p class="subtitle">Gérez votre compte et vos préférences</p>
             </div>
 
-            <!-- Profile Section -->
+            <!-- Compte connecté -->
+            <div class="settings-section">
+                <div class="section-header">
+                    <i class="fas fa-id-badge"></i>
+                    <h2>Compte connecté</h2>
+                </div>
+                <p class="section-description">Résumé rapide de la session actuelle</p>
+
+                <div class="settings-card">
+                    <div class="account-summary-card">
+                        <div class="account-summary-left">
+                            <div class="account-avatar" id="accountAvatar">
+                                <span>U</span>
+                            </div>
+
+                            <div class="account-summary-text">
+                                <h3 id="accountDisplayName">Utilisateur</h3>
+                                <p id="accountDisplayEmail">email@exemple.com</p>
+                                <p id="accountDisplayUsername">@utilisateur</p>
+                                <p id="accountDisplayChannel">Chaîne : Non connectée</p>
+                            </div>
+                        </div>
+
+                        <div class="account-badges">
+                            <span class="status-badge success">
+                                <i class="fas fa-check-circle"></i>
+                                Session active
+                            </span>
+                            <span class="status-badge warning">
+                                <i class="fas fa-lock"></i>
+                                Profil non modifiable
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profil -->
             <div class="settings-section">
                 <div class="section-header">
                     <i class="fas fa-user-circle"></i>
@@ -71,18 +106,23 @@
                 <p class="section-description">Informations de votre compte créateur</p>
 
                 <div class="settings-card">
+                    <div class="readonly-banner">
+                        <strong><i class="fas fa-info-circle"></i> Lecture seule :</strong>
+                        les informations du profil sont affichées automatiquement à partir du compte connecté, mais leur modification n’est pas encore autorisée.
+                    </div>
+
                     <div class="profile-photo-section">
                         <label class="form-label">Photo de profil</label>
                         <div class="photo-upload">
                             <div class="photo-placeholder" id="profilePhoto">
-                                <i class="fas fa-user"></i>
+                                <span>U</span>
                             </div>
                             <div class="photo-upload-info">
-                                <button class="btn-upload">
+                                <button class="btn-upload" type="button" id="profilePhotoBtn">
                                     <i class="fas fa-camera"></i>
                                     Changer la photo
                                 </button>
-                                <p class="upload-hint">JPG, PNG ou GIF. Max 2MB</p>
+                                <p class="upload-hint">Affichage uniquement pour le moment</p>
                             </div>
                         </div>
                     </div>
@@ -90,34 +130,39 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label class="form-label">Nom complet</label>
-                            <input type="text" class="form-input" placeholder="Jean Créateur" value="Jean Créateur">
+                            <input type="text" class="form-input" id="fullNameInput" placeholder="Nom complet" readonly>
                         </div>
+
                         <div class="form-group">
                             <label class="form-label">Email</label>
-                            <input type="email" class="form-input" placeholder="jean@exemple.com" value="jean@exemple.com">
+                            <input type="email" class="form-input" id="emailInput" placeholder="email@exemple.com" readonly>
                         </div>
+
                         <div class="form-group">
                             <label class="form-label">Nom d'utilisateur</label>
-                            <input type="text" class="form-input" placeholder="@jancreateur" value="@jancreateur">
+                            <input type="text" class="form-input" id="usernameInput" placeholder="@utilisateur" readonly>
                         </div>
+
                         <div class="form-group">
-                            <label class="form-label">Fuseau horaire</label>
-                            <select class="form-input">
-                                <option>Europe/Paris (UTC+1)</option>
-                                <option>America/New_York (UTC-5)</option>
-                                <option>Asia/Tokyo (UTC+9)</option>
-                            </select>
+                            <label class="form-label">Channel ID</label>
+                            <input
+                                type="text"
+                                class="form-input blocked-input"
+                                id="channelIdInput"
+                                placeholder="Aucun channel ID"
+                                readonly
+                            >
                         </div>
                     </div>
 
-                    <button class="btn-primary">
-                        <i class="fas fa-save"></i>
-                        Enregistrer les modifications
+                    <button class="btn-primary" type="button" id="saveProfileBtn">
+                        <i class="fas fa-lock"></i>
+                        Modification non disponible
                     </button>
                 </div>
             </div>
 
-            <!-- YouTube Connection -->
+            <!-- Connexion YouTube -->
             <div class="settings-section">
                 <div class="section-header">
                     <i class="fab fa-youtube"></i>
@@ -134,8 +179,8 @@
                                 <p class="connection-subtitle" id="connectionStatus">Aucune chaîne connectée</p>
                             </div>
                         </div>
-                        <button class="btn-secondary" onclick="window.location.href='login.html'">
-                            Connecter
+                        <button class="btn-secondary" type="button" onclick="window.location.href='login.html'">
+                            Changer
                         </button>
                     </div>
 
@@ -217,16 +262,16 @@
                 <div class="settings-card">
                     <div class="form-group">
                         <label class="form-label">Ton des réponses</label>
-                        <select class="form-input">
+                        <select class="form-input" id="aiToneSelect">
                             <option>Professionnel</option>
                             <option>Décontracté</option>
                             <option>Créatif</option>
                         </select>
                     </div>
-
+<br>
                     <div class="form-group">
                         <label class="form-label">Langue principale</label>
-                        <select class="form-input">
+                        <select class="form-input" id="aiLanguageSelect">
                             <option>Français</option>
                             <option>English</option>
                             <option>Español</option>
@@ -291,9 +336,9 @@
                     <div class="security-item">
                         <div class="security-info">
                             <h3>Mot de passe</h3>
-                            <p>Dernière modification il y a 3 mois</p>
+                            <p>Dernière modification côté authentification</p>
                         </div>
-                        <button class="btn-secondary-small">Modifier</button>
+                        <button class="btn-secondary-small" type="button" id="modifyPasswordBtn">Modifier</button>
                     </div>
 
                     <div class="security-item">
@@ -301,7 +346,7 @@
                             <h3>Authentification à deux facteurs</h3>
                             <p>Ajoutez une couche de sécurité supplémentaire</p>
                         </div>
-                        <button class="btn-secondary-small">Activer</button>
+                        <button class="btn-secondary-small" type="button" id="enable2FABtn">Activer</button>
                     </div>
 
                     <div class="security-item danger-zone">
@@ -309,7 +354,7 @@
                             <h3>Supprimer le compte</h3>
                             <p>Cette action est irréversible</p>
                         </div>
-                        <button class="btn-danger-small">Supprimer</button>
+                        <button class="btn-danger-small" type="button" id="deleteAccountBtn">Supprimer</button>
                     </div>
                 </div>
             </div>
@@ -317,16 +362,17 @@
             <!-- Disconnect Button -->
             <div class="settings-section">
                 <div class="settings-card">
-                    <button class="btn-disconnect" onclick="logout()">
+                    <button class="btn-disconnect" type="button" onclick="logout()">
                         <i class="fas fa-sign-out-alt"></i>
                         Se déconnecter
                     </button>
                 </div>
             </div>
-
         </div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script src="theme.js"></script>
     <script src="script.js"></script>
     <script src="settings.js"></script>

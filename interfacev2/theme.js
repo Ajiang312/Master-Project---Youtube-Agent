@@ -1,3 +1,10 @@
+document.addEventListener("DOMContentLoaded", async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    window.location.href = "login.html";
+    return;
+  }
+
 // theme.js - Système de gestion des thèmes (Sombre, Clair, Système)
 
 // Initialiser le thème au chargement de la page
@@ -90,3 +97,4 @@ function updateThemeButtons(activeTheme) {
         }
     });
 }
+});

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TubeAI - Mes Vidéos</title>
+    <title>CreaTube - Mes Vidéos</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="videos-style.css">
     <link rel="stylesheet" href="theme.css">
@@ -16,7 +16,7 @@
             <div class="logo-icon">
                 <i class="fas fa-play-circle"></i>
             </div>
-            <span class="logo-text">TubeAI</span>
+            <span class="logo-text">CreaTube</span>
         </div>
         
         <nav class="navigation">
@@ -113,17 +113,22 @@
             <div class="filters-card">
                 <div class="search-wrapper">
                     <i class="fas fa-search"></i>
-                    <input type="text" id="videoSearch" placeholder="Rechercher une vidéo..." class="search-input">
+                    <input type="text" id="videoSearch" placeholder="Rechercher une vidéo." class="search-input">
                 </div>
                 <div class="filters-wrapper">
                     <select class="filter-select" id="statusFilter">
-                        <option value="all">
-                            <i class="fas fa-filter"></i> Tous
-                        </option>
+                        <option value="all">Tous</option>
                         <option value="published">Publiées</option>
                         <option value="draft">Brouillons</option>
                         <option value="scheduled">Planifiées</option>
                     </select>
+            
+                    <select class="filter-select" id="typeFilter">
+                        <option value="all">Tous les formats</option>
+                        <option value="short">Shorts</option>
+                        <option value="long">Vidéos longues</option>
+                    </select>
+            
                     <select class="filter-select" id="sortFilter">
                         <option value="recent">Plus récentes</option>
                         <option value="views">Plus de vues</option>

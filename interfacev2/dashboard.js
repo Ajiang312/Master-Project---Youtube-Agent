@@ -1,31 +1,45 @@
-// dashboard.js - Logique du dashboard avec données Supabase
+const AI_API_URL = 'http://127.0.0.1:5001/api/chat';
 
-// Vérifier si une chaîne est sélectionnée
 let currentChannel = null;
 
-// Charger les statistiques au démarrage
 document.addEventListener('DOMContentLoaded', async () => {
-    // Vérifier qu'une chaîne est sélectionnée
-    const channelData = localStorage.getItem('selectedChannel');
-    
-    if (!channelData) {
-        // Rediriger vers la page de connexion si pas de chaîne sélectionnée
-        window.location.href = 'login.html';
+    const auth = await requireAuth('login.html');
+    if (!auth) return;
+
+    currentChannel = auth.channel;
+
+    if (!currentChannel) {
+        showErrorMessage('Aucune chaîne liée à ce compte.');
         return;
     }
-    
-    currentChannel = JSON.parse(channelData);
+
     displayChannelInfo();
-    
+    displayWelcomeMessage();
+
     await loadDashboardData();
     setupEventListeners();
 });
 
-// Afficher les infos de la chaîne sélectionnée
+function displayWelcomeMessage() {
+    const messageContainer = document.querySelector('.assistant-message');
+    if (!messageContainer) return;
+
+    messageContainer.innerHTML = `
+        <div class="ai-response">
+            <p><strong>Assistant :</strong> Bonjour ! Je suis votre assistant IA pour la création de contenu YouTube. Comment puis-je vous aider aujourd'hui ?</p>
+        </div>
+    `;
+
+    scrollChatToBottom();
+}
+
 function displayChannelInfo() {
     const dashboardHeader = document.querySelector('.dashboard-header');
-    
-    // Ajouter le nom de la chaîne et un bouton de déconnexion
+    if (!dashboardHeader || !currentChannel) return;
+
+    const existing = document.querySelector('.channel-banner');
+    if (existing) existing.remove();
+
     const channelBanner = document.createElement('div');
     channelBanner.className = 'channel-banner';
     channelBanner.style.cssText = `
@@ -37,17 +51,74 @@ function displayChannelInfo() {
         justify-content: space-between;
         align-items: center;
         color: white;
+        gap: 16px;
+        flex-wrap: wrap;
     `;
-    
+
+    const thumbnailUrl = getChannelThumbnailUrl(currentChannel);
+
     channelBanner.innerHTML = `
-        <div>
-            <h3 style="font-size: 18px; margin-bottom: 5px;">
-                <i class="fas fa-youtube" style="margin-right: 8px;"></i>
-                ${currentChannel.title}
-            </h3>
-            <p style="font-size: 14px; opacity: 0.9;">
-                Chaîne YouTube connectée
-            </p>
+        <div style="display: flex; align-items: center; gap: 12px; min-width: 0;">
+            ${
+                thumbnailUrl
+                    ? `
+                        <img
+                            src="${escapeHtml(thumbnailUrl)}"
+                            alt="${escapeHtml(currentChannel.title || 'Chaîne YouTube')}"
+                            style="
+                                width: 44px;
+                                height: 44px;
+                                border-radius: 50%;
+                                object-fit: cover;
+                                flex-shrink: 0;
+                                border: 2px solid rgba(255,255,255,0.35);
+                                box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                                background: rgba(255,255,255,0.15);
+                            "
+                        >
+                    `
+                    : `
+                        <div style="
+                            width: 44px;
+                            height: 44px;
+                            border-radius: 50%;
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            flex-shrink: 0;
+                            border: 2px solid rgba(255,255,255,0.35);
+                            background: rgba(255,255,255,0.15);
+                            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                        ">
+                            <i class="fas fa-user-circle" style="font-size: 22px; color: white;"></i>
+                        </div>
+                    `
+            }
+
+            <div style="min-width: 0;">
+                <h3 style="
+                    font-size: 18px;
+                    margin-bottom: 5px;
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    min-width: 0;
+                ">
+                    <i class="fas fa-youtube" style="color: #ff0000; flex-shrink: 0;"></i>
+                    <span style="
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        display: inline-block;
+                        max-width: 100%;
+                    ">
+                        ${escapeHtml(currentChannel.title || 'Chaîne YouTube')}
+                    </span>
+                </h3>
+                <p style="font-size: 14px; opacity: 0.9;">
+                    Channel ID : ${escapeHtml(currentChannel.channel_id || 'Non défini')}
+                </p>
+            </div>
         </div>
         <button onclick="logout()" style="
             background: rgba(255,255,255,0.2);
@@ -57,54 +128,85 @@ function displayChannelInfo() {
             color: white;
             cursor: pointer;
             font-size: 14px;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-        " onmouseover="this.style.background='rgba(255,255,255,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.2)'">
+        ">
             <i class="fas fa-sign-out-alt" style="margin-right: 5px;"></i>
-            Changer de chaîne
+            Se déconnecter
         </button>
     `;
-    
+
     dashboardHeader.insertBefore(channelBanner, dashboardHeader.firstChild);
 }
 
-// Fonction de déconnexion
-function logout() {
-    localStorage.removeItem('selectedChannel');
+function getChannelThumbnailUrl(channel) {
+    if (!channel) return '';
+
+    const thumbs = channel.thumbnails;
+
+    if (!thumbs) return '';
+
+    if (typeof thumbs === 'string') {
+        try {
+            const parsed = JSON.parse(thumbs);
+            if (parsed?.high?.url) return parsed.high.url;
+            if (parsed?.medium?.url) return parsed.medium.url;
+            if (parsed?.default?.url) return parsed.default.url;
+            if (parsed?.url) return parsed.url;
+        } catch {
+            if (thumbs.trim()) return thumbs;
+        }
+    }
+
+    if (Array.isArray(thumbs)) {
+        const firstValid = thumbs.find(item => {
+            if (typeof item === 'string' && item.trim()) return true;
+            if (item && typeof item.url === 'string' && item.url.trim()) return true;
+            return false;
+        });
+
+        if (!firstValid) return '';
+        return typeof firstValid === 'string' ? firstValid : firstValid.url || '';
+    }
+
+    if (typeof thumbs === 'object') {
+        if (typeof thumbs.url === 'string' && thumbs.url.trim()) return thumbs.url;
+        if (thumbs.high && typeof thumbs.high.url === 'string' && thumbs.high.url.trim()) return thumbs.high.url;
+        if (thumbs.medium && typeof thumbs.medium.url === 'string' && thumbs.medium.url.trim()) return thumbs.medium.url;
+        if (thumbs.default && typeof thumbs.default.url === 'string' && thumbs.default.url.trim()) return thumbs.default.url;
+
+        for (const value of Object.values(thumbs)) {
+            if (typeof value === 'string' && value.trim()) return value;
+            if (value && typeof value.url === 'string' && value.url.trim()) return value.url;
+        }
+    }
+
+    return '';
+}
+
+async function logout() {
+    await logoutUser();
     window.location.href = 'login.html';
 }
 
-// Charger toutes les données du dashboard
 async function loadDashboardData() {
     showLoadingState();
-    
+
     try {
-        console.log('📊 Chargement des données pour channel_id:', currentChannel.channel_id);
-        
-        // Récupérer les stats UNIQUEMENT pour la chaîne sélectionnée
         const stats = await calculateDashboardStats(currentChannel.channel_id);
-        
-        console.log('📈 Stats calculées:', stats);
-        
+
         if (stats) {
             updateStatsCards(stats);
         } else {
-            // Afficher des données par défaut si erreur
             showDefaultStats();
         }
-        
-        // Charger les vidéos récentes de cette chaîne
+
         await loadRecentVideos(currentChannel.channel_id);
-        
     } catch (error) {
-        console.error('Erreur lors du chargement du dashboard:', error);
+        console.error('Erreur dashboard:', error);
         showErrorMessage('Erreur lors du chargement des données');
-    } finally {
-        hideLoadingState();
+        showDefaultStats();
     }
 }
 
-// Mettre à jour les cartes de statistiques
 function updateStatsCards(stats) {
     const statCards = {
         subscribers: document.querySelector('.stat-card:nth-child(1) .stat-value'),
@@ -112,39 +214,24 @@ function updateStatsCards(stats) {
         views: document.querySelector('.stat-card:nth-child(3) .stat-value'),
         likes: document.querySelector('.stat-card:nth-child(4) .stat-value')
     };
-    
-    if (statCards.subscribers) {
-        statCards.subscribers.textContent = stats.subscriberCount;
-    }
-    
-    if (statCards.videos) {
-        statCards.videos.textContent = stats.videoCount;
-    }
-    
-    if (statCards.views) {
-        statCards.views.textContent = stats.viewCount;
-    }
-    
-    if (statCards.likes) {
-        statCards.likes.textContent = stats.totalLikes;
-    }
-    
-    // Animer les valeurs
+
+    if (statCards.subscribers) statCards.subscribers.textContent = stats.subscriberCount;
+    if (statCards.videos) statCards.videos.textContent = stats.videoCount;
+    if (statCards.views) statCards.views.textContent = stats.viewCount;
+    if (statCards.likes) statCards.likes.textContent = stats.totalLikes;
+
     animateStatValues();
 }
 
-// Afficher les stats par défaut
 function showDefaultStats() {
-    const defaultStats = {
+    updateStatsCards({
         subscriberCount: '0',
         videoCount: '0',
         viewCount: '0',
         totalLikes: '0'
-    };
-    updateStatsCards(defaultStats);
+    });
 }
 
-// Charger les vidéos récentes de la chaîne sélectionnée
 async function loadRecentVideos(channelId) {
     try {
         const videos = await getRecentVideos(channelId);
@@ -155,13 +242,11 @@ async function loadRecentVideos(channelId) {
         }
 
         displayRecentVideos(videos);
-
     } catch (error) {
-        console.error('Erreur lors du chargement des vidéos récentes:', error);
+        console.error('Erreur vidéos récentes:', error);
         showNoVideosMessage();
     }
 }
-
 
 async function getRecentVideos(channelId) {
     const { data, error } = await supabase
@@ -179,21 +264,20 @@ async function getRecentVideos(channelId) {
         .limit(3);
 
     if (error) {
-        console.error('Erreur Supabase (recent videos):', error);
+        console.error('Erreur Supabase recent videos:', error);
         return [];
     }
 
-    return data;
+    return data || [];
 }
 
 function displayRecentVideos(videos) {
     const container = document.querySelector('.suggestions-box');
     if (!container) return;
 
-    // Garder le header
     const header = container.querySelector('.box-header');
     container.innerHTML = '';
-    container.appendChild(header);
+    if (header) container.appendChild(header);
 
     videos.forEach(video => {
         const card = document.createElement('div');
@@ -201,22 +285,14 @@ function displayRecentVideos(videos) {
 
         card.innerHTML = `
             <div class="suggestion-content">
-                <h3>${video.title}</h3>
-
+                <h3>${escapeHtml(video.title || 'Sans titre')}</h3>
                 <div class="suggestion-tags">
-                    <span class="tag">
-                        <i class="fas fa-eye"></i> ${formatNumber(video.view_count)} vues
-                    </span>
-                    <span class="tag">
-                        <i class="fas fa-thumbs-up"></i> ${formatNumber(video.like_count)}
-                    </span>
-                    <span class="tag">
-                        <i class="fas fa-comment"></i> ${formatNumber(video.comment_count)}
-                    </span>
+                    <span class="tag"><i class="fas fa-eye"></i> ${formatNumber(video.view_count)} vues</span>
+                    <span class="tag"><i class="fas fa-thumbs-up"></i> ${formatNumber(video.like_count)}</span>
+                    <span class="tag"><i class="fas fa-comment"></i> ${formatNumber(video.comment_count)}</span>
                 </div>
             </div>
-
-            <button class="btn-create" data-video-id="${video.id}">
+            <button class="btn-create" data-video-id="${escapeHtml(video.video_id)}">
                 Analyser
             </button>
         `;
@@ -230,168 +306,158 @@ function formatNumber(number) {
     return new Intl.NumberFormat('fr-FR').format(number);
 }
 
-
-// Afficher un message si pas de vidéos
 function showNoVideosMessage() {
     const suggestionsContainer = document.querySelector('.suggestions-box');
+    if (!suggestionsContainer) return;
+
     const header = suggestionsContainer.querySelector('.box-header');
     suggestionsContainer.innerHTML = '';
-    suggestionsContainer.appendChild(header);
-    
+    if (header) suggestionsContainer.appendChild(header);
+
     const emptyDiv = document.createElement('div');
-    emptyDiv.style.cssText = 'text-align: center; padding: 40px 20px; color: var(--text-light);';
+    emptyDiv.style.cssText = 'text-align:center; padding:40px 20px; color:var(--text-light);';
     emptyDiv.innerHTML = `
-        <i class="fas fa-video" style="font-size: 48px; opacity: 0.3; margin-bottom: 15px;"></i>
+        <i class="fas fa-video" style="font-size:48px; opacity:0.3; margin-bottom:15px;"></i>
         <p>Aucune vidéo trouvée pour cette chaîne</p>
     `;
     suggestionsContainer.appendChild(emptyDiv);
 }
 
-// Afficher les suggestions de vidéos
-function displayVideoSuggestions(videos) {
-    const suggestionsContainer = document.querySelector('.suggestions-box');
-    
-    if (!suggestionsContainer) return;
-    
-    // Garder le header
-    const header = suggestionsContainer.querySelector('.box-header');
-    suggestionsContainer.innerHTML = '';
-    suggestionsContainer.appendChild(header);
-    
-    videos.forEach((video, index) => {
-        const suggestionCard = createVideoSuggestionCard(video, index);
-        suggestionsContainer.appendChild(suggestionCard);
-    });
-}
-
-// Créer une carte de suggestion à partir d'une vidéo
-function createVideoSuggestionCard(video, index) {
-    const card = document.createElement('div');
-    card.className = 'suggestion-card';
-    
-    const difficulty = index % 3 === 0 ? 'Haut' : index % 3 === 1 ? 'Moyen' : 'Facile';
-    const tagType = index % 2 === 0 ? 'trending' : 'popular';
-    const tagIcon = index % 2 === 0 ? 'fa-chart-line' : 'fa-fire';
-    const tagText = index % 2 === 0 ? 'Tendance' : 'Populaire';
-    
-    card.innerHTML = `
-        <div class="suggestion-content">
-            <h3>${video.title || 'Vidéo sans titre'}</h3>
-            <div class="suggestion-tags">
-                <span class="tag ${tagType}">
-                    <i class="fas ${tagIcon}"></i> ${tagText}
-                </span>
-                <span class="tag difficulty">${difficulty}</span>
-            </div>
-        </div>
-        <button class="btn-create" data-video-id="${video.id}">Analyser</button>
-    `;
-    
-    return card;
-}
-
-// Configuration des événements
 function setupEventListeners() {
-    // Bouton d'envoi de message
     const sendButton = document.querySelector('.btn-send');
     const assistantInput = document.querySelector('.assistant-input input');
-    
+
     if (sendButton && assistantInput) {
-        sendButton.addEventListener('click', () => sendAIMessage(assistantInput.value));
+        sendButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            sendAIMessage(assistantInput.value);
+        });
+
         assistantInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
+                e.preventDefault();
                 sendAIMessage(assistantInput.value);
             }
         });
     }
-    
-    // Boutons de création/analyse
+
     document.addEventListener('click', async (e) => {
-        if (e.target.classList.contains('btn-create')) {
-            const videoId = e.target.dataset.videoId;
-            if (videoId) {
-                await analyzeVideo(videoId);
-            }
+        const button = e.target.closest('.btn-create');
+        if (!button) return;
+
+        const videoId = button.dataset.videoId;
+        if (videoId) {
+            window.location.href = `video-audit.html?video_id=${encodeURIComponent(videoId)}`;
         }
     });
 }
 
-// Envoyer un message à l'assistant IA
 async function sendAIMessage(message) {
     const input = document.querySelector('.assistant-input input');
-    const messageContainer = document.querySelector('.assistant-messages');
-    
-    if (!message.trim()) return;
-    
-    // Afficher le message de l'utilisateur
+    const messageContainer = document.querySelector('.assistant-message');
+
+    if (!messageContainer || !message || !message.trim()) return;
+
+    const cleanMessage = message.trim();
+
     const userMessageDiv = document.createElement('div');
     userMessageDiv.className = 'user-message';
-    userMessageDiv.innerHTML = `<p><strong>Vous:</strong> ${message}</p>`;
+    userMessageDiv.innerHTML = `
+        <p><strong>Vous :</strong> ${escapeHtml(cleanMessage)}</p>
+    `;
     messageContainer.appendChild(userMessageDiv);
-    
-    messageContainer.scrollTop = messageContainer.scrollHeight;
+    scrollChatToBottom();
 
-    // Vider l'input
-    input.value = '';
-    
-    // Simuler une réponse (à remplacer par votre vraie API IA)
-    setTimeout(() => {
-        const aiResponse = document.createElement('div');
-        aiResponse.className = 'ai-response';
-        aiResponse.innerHTML = `<p><strong>Assistant:</strong> J'ai bien reçu votre message. Comment puis-je vous aider avec vos vidéos YouTube ?</p>`;
-        messageContainer.appendChild(aiResponse);
-        messageContainer.scrollTop = messageContainer.scrollHeight;
-    }, 1000);
+    if (input) {
+        input.value = '';
+    }
+
+    const loadingDiv = document.createElement('div');
+    loadingDiv.className = 'ai-response';
+    loadingDiv.innerHTML = `
+        <p><strong>Assistant :</strong> ⏳ Analyse en cours...</p>
+    `;
+    messageContainer.appendChild(loadingDiv);
+    scrollChatToBottom();
+
+    try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError) {
+            throw new Error(`Erreur session Supabase : ${sessionError.message}`);
+        }
+
+        const accessToken = sessionData?.session?.access_token;
+
+        if (!accessToken) {
+            throw new Error('Aucun token de session trouvé. Veuillez vous reconnecter.');
+        }
+
+        const response = await fetch(AI_API_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({
+                message: cleanMessage,
+                session_id: currentChannel?.channel_id || 'default_session'
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || data.detail || `HTTP ${response.status}`);
+        }
+
+        const aiText = data.response || data.reply || 'Aucune réponse';
+
+        loadingDiv.innerHTML = `
+            <p><strong>Assistant :</strong> ${escapeHtml(aiText)}</p>
+        `;
+    } catch (error) {
+        console.error('Erreur IA:', error);
+        loadingDiv.innerHTML = `
+            <p><strong>Assistant :</strong> ❌ Erreur : ${escapeHtml(error.message)}.</p>
+        `;
+    }
+
+    scrollChatToBottom();
 }
 
-// Analyser une vidéo
 async function analyzeVideo(videoId) {
     try {
         showNotification('Analyse en cours...', 'info');
-        
-        // Récupérer les détails de la vidéo
+
         const { data: video, error } = await supabase
             .from('videos')
             .select('*')
-            .eq('id', videoId)
+            .eq('video_id', videoId)
             .single();
-        
+
         if (error) throw error;
-        
-        // Récupérer les commentaires
-        const comments = await getCommentsByVideo(videoId);
-        
-        // Afficher les résultats
-        showNotification(`Vidéo analysée: ${video.title}`, 'success');
-        console.log('Vidéo:', video);
-        console.log('Commentaires:', comments);
-        
+
+        showNotification(`Vidéo analysée : ${video.title}`, 'success');
     } catch (error) {
-        console.error('Erreur lors de l\'analyse:', error);
-        showNotification('Erreur lors de l\'analyse', 'error');
+        console.error('Erreur analyse vidéo:', error);
+        showNotification('Erreur lors de l’analyse', 'error');
     }
 }
 
-// États de chargement
 function showLoadingState() {
-    const statValues = document.querySelectorAll('.stat-value');
-    statValues.forEach(stat => {
+    document.querySelectorAll('.stat-value').forEach(stat => {
         stat.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
     });
 }
 
-function hideLoadingState() {
-    // La fonction updateStatsCards remplacera les spinners
-}
-
-// Animation des valeurs
 function animateStatValues() {
     const statValues = document.querySelectorAll('.stat-value');
-    
+
     statValues.forEach((stat, index) => {
         stat.style.opacity = '0';
         stat.style.transform = 'translateY(10px)';
-        
+
         setTimeout(() => {
             stat.style.transition = 'all 0.6s ease';
             stat.style.opacity = '1';
@@ -400,10 +466,8 @@ function animateStatValues() {
     });
 }
 
-// Notifications
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
     notification.textContent = message;
     notification.style.cssText = `
         position: fixed;
@@ -415,65 +479,30 @@ function showNotification(message, type = 'info') {
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         z-index: 1000;
-        animation: slideIn 0.3s ease;
     `;
-    
     document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.style.animation = 'slideOut 0.3s ease';
-        setTimeout(() => notification.remove(), 300);
-    }, 3000);
+    setTimeout(() => notification.remove(), 3000);
 }
 
 function showErrorMessage(message) {
     showNotification(message, 'error');
 }
 
-// Rafraîchir les données toutes les 5 minutes
-setInterval(async () => {
-    await loadDashboardData();
-}, 5 * 60 * 1000);
+function scrollChatToBottom() {
+    const messageContainer = document.querySelector('.assistant-message');
+    if (!messageContainer) return;
 
-// Ajouter les animations CSS
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-        to {
-            transform: translateX(0);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes slideOut {
-        from {
-            transform: translateX(0);
-            opacity: 1;
-        }
-        to {
-            transform: translateX(100%);
-            opacity: 0;
-        }
-    }
-    
-    .user-message, .ai-response {
-        padding: 10px;
-        margin: 10px 0;
-        border-radius: 8px;
-    }
-    
-    .user-message {
-        background: rgba(0, 188, 212, 0.1);
-        border-left: 3px solid var(--primary-color);
-    }
-    
-    .ai-response {
-        background: rgba(16, 185, 129, 0.1);
-        border-left: 3px solid var(--success-color);
-    }
-`;
-document.head.appendChild(style);
+    messageContainer.scrollTop = messageContainer.scrollHeight;
+}
+
+function escapeHtml(value) {
+    if (value === null || value === undefined) return '';
+
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+        .replace(/\n/g, '<br>');
+}
